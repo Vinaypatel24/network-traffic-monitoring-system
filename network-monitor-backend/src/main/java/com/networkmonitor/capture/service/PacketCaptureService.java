@@ -1,6 +1,11 @@
 package com.networkmonitor.capture.service;
 
 import com.networkmonitor.capture.entity.CaptureSession;
+import com.networkmonitor.capture.dto.PacketDTO;
+import com.networkmonitor.capture.parser.ProtocolParserFactory;
+import com.networkmonitor.capture.repository.PacketBatchRepository;
+import com.networkmonitor.capture.repository.CaptureSessionRepository;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.pcap4j.core.*;
@@ -8,8 +13,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
@@ -20,9 +27,26 @@ public class PacketCaptureService {
     @Value("${capture.queue-capacity:50000}")
     private int queueCapacity;
 
-    // Stores handles for active sessions so we can stop them
+    @Value("${capture.worker-threads:4}")
+    private int workerThreads;
+
+    @Value("${capture.batch-flush-size:2000}")
+    private int batchFlushSize;
+
+    @Value("${capture.batch-flush-interval-ms:500}")
+    private long batchFlushIntervalMs;
+
+    private final ProtocolParserFactory protocolParserFactory;
+    private final PacketBatchRepository packetBatchRepository;
+    private final CaptureSessionRepository captureSessionRepository;
+
     private final Map<Long, PcapHandle> activeHandles = new ConcurrentHashMap<>();
     private final Map<Long, AtomicBoolean> activeFlags = new ConcurrentHashMap<>();
+    
+    // One queue and thread pool per session, or a global one.
+    // Given the architecture, a dedicated queue per active session prevents slow sessions from blocking others.
+    private final Map<Long, BlockingQueue<org.pcap4j.packet.Packet>> sessionQueues = new ConcurrentHashMap<>();
+    private final Map<Long, ExecutorService> sessionExecutors = new ConcurrentHashMap<>();
 
     @Async("taskExecutor")
     public void startCapture(CaptureSession session, String interfaceName) {
@@ -44,14 +68,22 @@ public class PacketCaptureService {
             AtomicBoolean isRunning = new AtomicBoolean(true);
             activeFlags.put(session.getId(), isRunning);
 
+            // Setup Queue and Workers
+            BlockingQueue<org.pcap4j.packet.Packet> queue = new ArrayBlockingQueue<>(queueCapacity);
+            sessionQueues.put(session.getId(), queue);
+
+            ExecutorService executor = Executors.newFixedThreadPool(workerThreads);
+            sessionExecutors.put(session.getId(), executor);
+
+            for (int i = 0; i < workerThreads; i++) {
+                executor.submit(() -> processQueue(session.getId(), queue, isRunning));
+            }
+
             PacketListener listener = packet -> {
-                if (!isRunning.get()) {
-                    return;
+                if (!isRunning.get()) return;
+                if (!queue.offer(packet)) {
+                    // Queue full, packet dropped. In high load, consider metrics here.
                 }
-                
-                // TODO in Sprint 3: Offer packet to BlockingQueue for worker threads to process
-                // For now, just logging at TRACE
-                log.trace("Captured packet of size {} bytes", packet.length());
             };
 
             log.info("Capture loop starting for session {}", session.getId());
@@ -70,6 +102,61 @@ public class PacketCaptureService {
         }
     }
 
+    private void processQueue(Long sessionId, BlockingQueue<org.pcap4j.packet.Packet> queue, AtomicBoolean isRunning) {
+        List<PacketDTO> batch = new ArrayList<>(batchFlushSize);
+        long lastFlushTime = System.currentTimeMillis();
+
+        while (isRunning.get() || !queue.isEmpty()) {
+            try {
+                org.pcap4j.packet.Packet packet = queue.poll(100, TimeUnit.MILLISECONDS);
+                
+                if (packet != null) {
+                    PacketDTO dto = protocolParserFactory.parse(sessionId, packet);
+                    batch.add(dto);
+                }
+
+                boolean shouldFlush = batch.size() >= batchFlushSize || 
+                        (!batch.isEmpty() && (System.currentTimeMillis() - lastFlushTime) >= batchFlushIntervalMs);
+
+                if (shouldFlush) {
+                    packetBatchRepository.batchInsert(batch);
+                    
+                    // Update session totals (simplified; ideally done async or less frequently)
+                    updateSessionTotals(sessionId, batch);
+                    
+                    batch.clear();
+                    lastFlushTime = System.currentTimeMillis();
+                }
+
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            } catch (Exception e) {
+                log.error("Error processing packet batch: {}", e.getMessage());
+                batch.clear();
+            }
+        }
+        
+        // Final flush
+        if (!batch.isEmpty()) {
+            try {
+                packetBatchRepository.batchInsert(batch);
+                updateSessionTotals(sessionId, batch);
+            } catch (Exception e) {
+                log.error("Error on final flush: {}", e.getMessage());
+            }
+        }
+    }
+
+    private void updateSessionTotals(Long sessionId, List<PacketDTO> batch) {
+        long bytes = batch.stream().mapToLong(p -> p.getPacketSize() != null ? p.getPacketSize() : 0).sum();
+        captureSessionRepository.findById(sessionId).ifPresent(s -> {
+            s.setTotalPackets(s.getTotalPackets() + batch.size());
+            s.setTotalBytes(s.getTotalBytes() + bytes);
+            captureSessionRepository.save(s);
+        });
+    }
+
     public void stopCapture(Long sessionId) {
         AtomicBoolean flag = activeFlags.get(sessionId);
         if (flag != null) {
@@ -86,5 +173,29 @@ public class PacketCaptureService {
                 log.warn("Handle already closed for session {}", sessionId);
             }
         }
+
+        // Shutdown workers
+        ExecutorService executor = sessionExecutors.remove(sessionId);
+        if (executor != null) {
+            executor.shutdown();
+            try {
+                if (!executor.awaitTermination(2, TimeUnit.SECONDS)) {
+                    executor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
+        sessionQueues.remove(sessionId);
+    }
+    
+    @PreDestroy
+    public void cleanup() {
+        activeFlags.values().forEach(flag -> flag.set(false));
+        activeHandles.forEach((id, handle) -> {
+            try { handle.breakLoop(); handle.close(); } catch (Exception ignored) {}
+        });
+        sessionExecutors.values().forEach(ExecutorService::shutdownNow);
     }
 }
