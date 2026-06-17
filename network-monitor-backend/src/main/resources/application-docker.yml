@@ -1,0 +1,21 @@
+# ─── Docker Profile ──────────────────────────────────────
+# Loaded when SPRING_PROFILES_ACTIVE=docker
+#
+# KEY DIFFERENCE from base config:
+# Because the backend container uses network_mode: host,
+# both the backend AND postgres containers share the host's
+# network stack. Therefore the datasource URL uses 'localhost'
+# (not 'postgres' container name which only works on Docker bridge).
+#
+# This is the A7 fix from the implementation plan.
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/netmonitor
+    username: ${SPRING_DATASOURCE_USERNAME:netmonitor}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+logging:
+  level:
+    com.networkmonitor: INFO
+    org.springframework.security: WARN

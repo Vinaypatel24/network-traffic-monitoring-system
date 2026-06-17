@@ -1,0 +1,84 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: network-monitor
+
+  # ─── DataSource ───────────────────────────────────
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/netmonitor}
+    username: ${SPRING_DATASOURCE_USERNAME:netmonitor}
+    password: ${SPRING_DATASOURCE_PASSWORD:netmonitor}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 20000
+
+  # ─── JPA / Hibernate ──────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: validate          # Flyway owns the schema — never let Hibernate touch it
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          batch_size: 500         # fallback for any JPA saveAll usage; JDBC path is preferred
+          order_inserts: true
+          order_updates: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # ─── Flyway ───────────────────────────────────────
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    validate-on-migrate: true
+
+  # ─── WebSocket / STOMP ────────────────────────────
+  websocket:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:80}
+
+# ─── JWT ──────────────────────────────────────────────
+jwt:
+  secret: ${JWT_SECRET}
+  expiry-ms: ${JWT_EXPIRY_MS:900000}           # 15 minutes
+  refresh-expiry-days: ${REFRESH_TOKEN_EXPIRY_DAYS:7}
+
+# ─── CORS ─────────────────────────────────────────────
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:80}
+
+# ─── Capture / Pipeline ───────────────────────────────
+capture:
+  queue-capacity: 50000
+  worker-threads: 4
+  batch-flush-size: 2000
+  batch-flush-interval-ms: 500
+  broadcast-interval-ms: 1000
+  broadcast-max-packets: 200
+
+# ─── Threat Detection ─────────────────────────────────
+detection:
+  engine-interval-ms: 5000
+  sliding-window-seconds: 60
+
+# ─── Logging ──────────────────────────────────────────
+logging:
+  level:
+    root: INFO
+    com.networkmonitor: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+
+# ─── SpringDoc / Swagger ──────────────────────────────
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method

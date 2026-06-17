@@ -1,0 +1,25 @@
+# ─── Dev Profile ─────────────────────────────────────────
+# Loaded when SPRING_PROFILES_ACTIVE=dev
+# Use for local Windows development (Spring Boot run directly, NOT via Docker)
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/netmonitor
+    username: netmonitor
+    password: netmonitor
+
+  jpa:
+    show-sql: true
+
+logging:
+  level:
+    com.networkmonitor: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE
+
+# ─── Windows / Npcap note ────────────────────────────────
+# Ensure Npcap is installed (https://npcap.com/#download)
+# Run IDE or Maven as Administrator for raw socket access.
+# If Pcap4J fails to find Npcap, add VM arg:
+#   -Djna.library.path=C:\Windows\System32\Npcap
