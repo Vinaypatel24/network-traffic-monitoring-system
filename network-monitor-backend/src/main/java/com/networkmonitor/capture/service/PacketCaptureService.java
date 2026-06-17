@@ -5,6 +5,7 @@ import com.networkmonitor.capture.dto.PacketDTO;
 import com.networkmonitor.capture.parser.ProtocolParserFactory;
 import com.networkmonitor.capture.repository.PacketBatchRepository;
 import com.networkmonitor.capture.repository.CaptureSessionRepository;
+import com.networkmonitor.statistics.service.StatisticsAggregatorService;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,7 @@ public class PacketCaptureService {
     private final ProtocolParserFactory protocolParserFactory;
     private final PacketBatchRepository packetBatchRepository;
     private final CaptureSessionRepository captureSessionRepository;
+    private final StatisticsAggregatorService statisticsAggregatorService;
 
     private final Map<Long, PcapHandle> activeHandles = new ConcurrentHashMap<>();
     private final Map<Long, AtomicBoolean> activeFlags = new ConcurrentHashMap<>();
@@ -120,6 +122,7 @@ public class PacketCaptureService {
 
                 if (shouldFlush) {
                     packetBatchRepository.batchInsert(batch);
+                    statisticsAggregatorService.aggregateBatch(sessionId, batch);
                     
                     // Update session totals (simplified; ideally done async or less frequently)
                     updateSessionTotals(sessionId, batch);
@@ -141,6 +144,7 @@ public class PacketCaptureService {
         if (!batch.isEmpty()) {
             try {
                 packetBatchRepository.batchInsert(batch);
+                statisticsAggregatorService.aggregateBatch(sessionId, batch);
                 updateSessionTotals(sessionId, batch);
             } catch (Exception e) {
                 log.error("Error on final flush: {}", e.getMessage());

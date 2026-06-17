@@ -1,7 +1,7 @@
 # Project Progress
 
 **Project:** Network Traffic Monitoring & Threat Detection System
-**Completion:** 45%
+**Completion:** 60%
 
 ## Development Log
 
@@ -31,15 +31,15 @@
 - [x] Implement ultra-fast JDBC `batchUpdate` insert path for packets.
 - [x] Build `PacketController` for paginated queries.
 
+### Phase 4: Statistics (Sprint 4)
+- [x] Implement `TrafficStatistics` and `IpStatistics` entities.
+- [x] Build `StatisticsAggregatorService` using `ConcurrentHashMap` counters.
+- [x] Create `@Scheduled` task to flush counters to the database.
+- [x] Build `StatisticsController` to serve dashboard charts.
+
 ---
 
 ## Tasks In Progress
-
-### Phase 4: Statistics (Sprint 4)
-- [ ] Implement `TrafficStatistics` and `IpStatistics` entities.
-- [ ] Build `StatisticsAggregatorService` using `ConcurrentHashMap` counters.
-- [ ] Create `@Scheduled` task to flush counters to the database.
-- [ ] Build `StatisticsController` to serve dashboard charts.
 
 ### Phase 5: Threat Detection & WebSocket (Sprint 5)
 - [ ] Implement `ThreatDetectionEngine` and `SlidingWindowCounter`.
