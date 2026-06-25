@@ -41,6 +41,7 @@ public class PacketCaptureService {
     private final PacketBatchRepository packetBatchRepository;
     private final CaptureSessionRepository captureSessionRepository;
     private final StatisticsAggregatorService statisticsAggregatorService;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     private final Map<Long, PcapHandle> activeHandles = new ConcurrentHashMap<>();
     private final Map<Long, AtomicBoolean> activeFlags = new ConcurrentHashMap<>();
@@ -123,6 +124,7 @@ public class PacketCaptureService {
                 if (shouldFlush) {
                     packetBatchRepository.batchInsert(batch);
                     statisticsAggregatorService.aggregateBatch(sessionId, batch);
+                    eventPublisher.publishEvent(new com.networkmonitor.capture.event.PacketBatchCapturedEvent(this, new ArrayList<>(batch)));
                     
                     // Update session totals (simplified; ideally done async or less frequently)
                     updateSessionTotals(sessionId, batch);
@@ -145,6 +147,7 @@ public class PacketCaptureService {
             try {
                 packetBatchRepository.batchInsert(batch);
                 statisticsAggregatorService.aggregateBatch(sessionId, batch);
+                eventPublisher.publishEvent(new com.networkmonitor.capture.event.PacketBatchCapturedEvent(this, new ArrayList<>(batch)));
                 updateSessionTotals(sessionId, batch);
             } catch (Exception e) {
                 log.error("Error on final flush: {}", e.getMessage());

@@ -42,11 +42,11 @@
 ## Tasks In Progress
 
 ### Phase 5: Threat Detection & WebSocket (Sprint 5)
-- [ ] Implement `ThreatDetectionEngine` and `SlidingWindowCounter`.
-- [ ] Build 4 strategies: Port Scan, Traffic Spike, Abnormal Rate, Suspicious Connection.
-- [ ] Create `Alert` and `BlacklistedIp` CRUD APIs.
-- [ ] Configure STOMP WebSocket broker with JWT authentication.
-- [ ] Implement `DashboardBroadcastService` for real-time pushing.
+- [x] Implement `ThreatDetectionEngine` and `SlidingWindowCounter`.
+- [x] Build 4 strategies: Port Scan, Traffic Spike, Abnormal Rate, Suspicious Connection.
+- [x] Create `Alert` and `BlacklistedIp` CRUD APIs.
+- [x] Configure STOMP WebSocket broker with JWT authentication.
+- [x] Implement `DashboardBroadcastService` for real-time pushing.
 
 ### Phase 6: Frontend Dashboard (Sprint 6)
 - [ ] Setup Axios interceptors and AuthContext.
