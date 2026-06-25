@@ -49,10 +49,10 @@
 - [x] Implement `DashboardBroadcastService` for real-time pushing.
 
 ### Phase 6: Frontend Dashboard (Sprint 6)
-- [ ] Setup Axios interceptors and AuthContext.
-- [ ] Build Dashboard (Chart.js pie/line charts, Live Packet Feed).
-- [ ] Build Packets grid (filtering/pagination).
-- [ ] Build Alerts management UI (Admin forms).
+- [x] Setup Axios interceptors and AuthContext.
+- [x] Build Dashboard (Chart.js pie/line charts, Live Packet Feed).
+- [x] Build Packets grid (filtering/pagination).
+- [x] Build Alerts management UI (Admin forms).
 
 ### Phase 7: Delivery (Sprint 6 cont.)
 - [ ] Comprehensive unit and integration test coverage.
