@@ -11,8 +11,8 @@ const Blacklist = () => {
   const fetchBlacklist = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/blacklisted-ips');
-      setBlacklistedIps(response.data);
+      const response = await api.get('/blacklist');
+      setBlacklistedIps(response.data.content);
     } catch (error) {
       console.error('Failed to fetch blacklist:', error);
     } finally {
@@ -29,7 +29,7 @@ const Blacklist = () => {
     if (!newIp) return;
     
     try {
-      await api.post('/blacklisted-ips', { ipAddress: newIp, reason });
+      await api.post('/blacklist', { ipAddress: newIp, reason });
       setNewIp('');
       setReason('');
       fetchBlacklist();
@@ -42,7 +42,7 @@ const Blacklist = () => {
   const handleRemove = async (id) => {
     if (!window.confirm('Are you sure you want to remove this IP from the blacklist?')) return;
     try {
-      await api.delete(`/blacklisted-ips/${id}`);
+      await api.delete(`/blacklist/${id}`);
       fetchBlacklist();
     } catch (error) {
       console.error('Failed to remove IP:', error);

@@ -24,18 +24,18 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class PortScanStrategy implements ThreatDetectionStrategy {
 
-    @Value("${threat.port-scan.threshold:50}")
-    private int threshold;
-
-    @Value("${threat.port-scan.window-seconds:10}")
-    private long windowSeconds;
+    private final int threshold;
+    private final long windowSeconds;
 
     // srcIp → set of dst ports seen (reset on cooldown via SlidingWindowCounter)
     private final ConcurrentHashMap<String, Set<Integer>> portSets = new ConcurrentHashMap<>();
     private final SlidingWindowCounter windowCounter;
 
     public PortScanStrategy(
+            @Value("${threat.port-scan.threshold:50}") int threshold,
             @Value("${threat.port-scan.window-seconds:10}") long windowSeconds) {
+        this.threshold = threshold;
+        this.windowSeconds = windowSeconds;
         this.windowCounter = new SlidingWindowCounter(windowSeconds);
     }
 

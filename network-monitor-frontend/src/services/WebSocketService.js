@@ -14,10 +14,9 @@ class WebSocketService {
     }
 
     // SockJS fallback required if STOMP over pure WebSocket fails due to CORS or auth headers
-    const socket = new SockJS('http://localhost:8080/ws');
     
     this.client = new Client({
-      webSocketFactory: () => socket,
+      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
       connectHeaders: {
         Authorization: `Bearer ${token}`
       },

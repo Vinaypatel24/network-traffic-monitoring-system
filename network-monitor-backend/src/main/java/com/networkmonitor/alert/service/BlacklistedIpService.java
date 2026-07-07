@@ -59,6 +59,7 @@ public class BlacklistedIpService {
         return blacklistedIpRepository.findAll(pageable).map(this::mapToDTO);
     }
 
+    @Transactional(readOnly = true)
     public boolean isIpBlacklisted(String ipAddress) {
         return blacklistedIpRepository.existsByIpAddressAndEnabledTrue(ipAddress);
     }

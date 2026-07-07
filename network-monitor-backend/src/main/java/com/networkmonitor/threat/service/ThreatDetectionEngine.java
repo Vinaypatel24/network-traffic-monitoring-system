@@ -8,6 +8,8 @@ import com.networkmonitor.capture.dto.PacketDTO;
 import com.networkmonitor.capture.event.PacketBatchCapturedEvent;
 import com.networkmonitor.threat.model.ThreatAlert;
 import com.networkmonitor.threat.strategy.ThreatDetectionStrategy;
+import com.networkmonitor.alert.enums.AlertSeverity;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -25,6 +27,7 @@ public class ThreatDetectionEngine {
     private final List<ThreatDetectionStrategy> strategies;
     private final AlertService alertService;
     private final AlertRuleService alertRuleService;
+    private final EntityManager entityManager;
 
     @Async("taskExecutor")
     @EventListener
@@ -51,13 +54,12 @@ public class ThreatDetectionEngine {
                                     .alertType(threatAlert.alertType())
                                     .sourceIp(threatAlert.sourceIp())
                                     .destinationIp(threatAlert.destinationIp())
-                                    .severity(threatAlert.severity())
+                                    .severity(AlertSeverity.valueOf(threatAlert.severity()))
                                     .description(threatAlert.description())
                                     .build();
                             
                             // For CaptureSession, we need a proxy reference to avoid full fetch:
-                            com.networkmonitor.capture.entity.CaptureSession sessionRef = new com.networkmonitor.capture.entity.CaptureSession();
-                            sessionRef.setId(threatAlert.captureSessionId());
+                            com.networkmonitor.capture.entity.CaptureSession sessionRef = entityManager.getReference(com.networkmonitor.capture.entity.CaptureSession.class, threatAlert.captureSessionId());
                             alert.setCaptureSession(sessionRef);
 
                             alertService.createAlert(alert);

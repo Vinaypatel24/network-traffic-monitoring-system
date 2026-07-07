@@ -10,7 +10,7 @@ const Alerts = () => {
     setLoading(true);
     try {
       const response = await api.get('/alerts');
-      setAlerts(response.data);
+      setAlerts(response.data.content);
     } catch (error) {
       console.error('Failed to fetch alerts:', error);
     } finally {
@@ -24,7 +24,7 @@ const Alerts = () => {
 
   const resolveAlert = async (id) => {
     try {
-      await api.put(`/alerts/${id}/resolve`);
+      await api.post(`/alerts/${id}/resolve`);
       fetchAlerts();
     } catch (error) {
       console.error('Failed to resolve alert:', error);
