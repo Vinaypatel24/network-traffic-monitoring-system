@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: network-monitor-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: network_monitor
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: 
+      context: ./network-monitor-backend
+      dockerfile: Dockerfile
+    container_name: network-monitor-backend
+    # network_mode: host is REQUIRED on Linux to sniff the host's physical network interfaces
+    # Note for Windows/Mac Docker Desktop users: This binds to the lightweight VM's network,
+    # not the physical Windows/Mac host.
+    network_mode: "host"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/network_monitor
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - JWT_SECRET=3cfa76ef14937c1c0ea519f8fc057a80fcd04a7420f8e8bcd0a7567c272e007b
+      - JWT_EXPIRATION=86400000
+    depends_on:
+      db:
+        condition: service_healthy
+    # If network_mode: host doesn't work well on your setup and you remove it,
+    # uncomment these lines and change the datasource URL to point to 'db' instead of 'localhost'.
+    # ports:
+    #   - "8080:8080"
+    # cap_add:
+    #   - NET_ADMIN
+    #   - NET_RAW
+
+  frontend:
+    build:
+      context: ./network-monitor-frontend
+      dockerfile: Dockerfile
+    container_name: network-monitor-frontend
+    ports:
+      # Expose as 5173 to match the dev environment URL
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
