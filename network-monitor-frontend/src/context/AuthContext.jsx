@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 
 const AuthContext = createContext();
@@ -10,28 +10,28 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (token) {
-      // Validate token and get user info
-      fetchUser();
-    } else {
-      setLoading(false);
-    }
-  }, [token]);
-
-  const fetchUser = async () => {
+  // W4 fix: fetchUser declared before the useEffect that uses it
+  const fetchUser = useCallback(async () => {
     try {
-      // Assuming a /me endpoint exists or we decode JWT
-      // For now, let's decode the JWT payload manually to get username
+      // Decode JWT payload to extract username — no /me endpoint needed
       const payload = JSON.parse(atob(token.split('.')[1]));
       setUser({ username: payload.sub });
     } catch (error) {
-      console.error("Failed to parse token", error);
+      console.error('Failed to parse token', error);
       logout();
     } finally {
       setLoading(false);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      fetchUser();
+    } else {
+      setLoading(false);
+    }
+  }, [token, fetchUser]);
 
   const login = async (username, password) => {
     try {
@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }) => {
       setToken(newToken);
       return { success: true };
     } catch (error) {
-      console.error("Login error", error);
+      console.error('Login error', error);
       return { 
         success: false, 
         error: error.response?.data?.message || 'Login failed' 
@@ -54,12 +54,13 @@ export const AuthProvider = ({ children }) => {
     try {
       await api.post('/auth/logout');
     } catch (error) {
-      console.error("Logout error", error);
+      console.error('Logout error', error);
     } finally {
       localStorage.removeItem('token');
       setToken(null);
       setUser(null);
-      window.location.href = '/login';
+      // W2 fix: no window.location.href — ProtectedRoute handles the redirect to /login
+      // when isAuthenticated becomes false.
     }
   };
 

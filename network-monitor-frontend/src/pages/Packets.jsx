@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import api from '../services/api';
-import { Filter, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Packets = () => {
   const [packets, setPackets] = useState([]);
@@ -12,14 +12,10 @@ const Packets = () => {
   const [protocol, setProtocol] = useState('');
   const [srcIp, setSrcIp] = useState('');
 
-  const fetchPackets = async () => {
+  const fetchPackets = useCallback(async () => {
     setLoading(true);
     try {
-      // Backend expects pagination 0-indexed
-      const params = new URLSearchParams({
-        page,
-        size: 15
-      });
+      const params = new URLSearchParams({ page, size: 15 });
       if (protocol) params.append('protocol', protocol);
       if (srcIp) params.append('srcIp', srcIp);
 
@@ -31,16 +27,16 @@ const Packets = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, protocol, srcIp]);
 
   useEffect(() => {
     fetchPackets();
-  }, [page, protocol, srcIp]);
+  }, [fetchPackets]);
 
   const handleFilter = (e) => {
     e.preventDefault();
+    // Just reset page; useEffect re-fetches automatically via fetchPackets dependency
     setPage(0);
-    fetchPackets();
   };
 
   return (

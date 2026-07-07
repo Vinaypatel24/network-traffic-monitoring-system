@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
-import { ShieldAlert, CheckCircle, Clock } from 'lucide-react';
+import { ShieldAlert, CheckCircle, Clock, Bell } from 'lucide-react';
 
 const Alerts = () => {
   const [alerts, setAlerts] = useState([]);
@@ -28,6 +28,15 @@ const Alerts = () => {
       fetchAlerts();
     } catch (error) {
       console.error('Failed to resolve alert:', error);
+    }
+  };
+
+  const acknowledgeAlert = async (id) => {
+    try {
+      await api.post(`/alerts/${id}/acknowledge`);
+      fetchAlerts();
+    } catch (error) {
+      console.error('Failed to acknowledge alert:', error);
     }
   };
 
@@ -94,12 +103,23 @@ const Alerts = () => {
                 </div>
               </div>
               
-              <div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
                 {alert.status === 'NEW' && (
+                  <button 
+                    onClick={() => acknowledgeAlert(alert.id)}
+                    className="btn btn-outline" 
+                    style={{ color: 'var(--warning)', borderColor: 'rgba(245, 158, 11, 0.3)' }}
+                    title="Acknowledge"
+                  >
+                    <Bell size={18} />
+                  </button>
+                )}
+                {(alert.status === 'NEW' || alert.status === 'ACKNOWLEDGED') && (
                   <button 
                     onClick={() => resolveAlert(alert.id)}
                     className="btn btn-outline" 
                     style={{ color: 'var(--success)', borderColor: 'rgba(16, 185, 129, 0.3)' }}
+                    title="Resolve"
                   >
                     <CheckCircle size={18} /> Resolve
                   </button>

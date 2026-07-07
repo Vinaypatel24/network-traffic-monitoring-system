@@ -24,14 +24,6 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Placeholder for now
-const PlaceholderPage = ({ title }) => (
-  <div style={{ padding: '2rem' }}>
-    <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>{title}</h1>
-    <div className="glass-panel">Component under construction.</div>
-  </div>
-);
-
 function AppRoutes() {
   return (
     <Routes>

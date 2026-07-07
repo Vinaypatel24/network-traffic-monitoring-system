@@ -77,12 +77,17 @@ public class StatisticsAggregatorService {
             return; // Not enough time has passed
         }
 
-        // Snapshot and clear the maps
-        Map<String, LongAdder[]> trafficSnapshot = new ConcurrentHashMap<>(trafficCounters);
-        trafficCounters.clear();
+        // Atomic drain: remove each key individually so packets arriving during drain
+        // go into the next window rather than being silently lost.
+        Map<String, LongAdder[]> trafficSnapshot = new java.util.HashMap<>();
+        trafficCounters.forEach((k, v) -> {
+            if (trafficCounters.remove(k, v)) trafficSnapshot.put(k, v);
+        });
 
-        Map<String, LongAdder[]> ipSnapshot = new ConcurrentHashMap<>(ipCounters);
-        ipCounters.clear();
+        Map<String, LongAdder[]> ipSnapshot = new java.util.HashMap<>();
+        ipCounters.forEach((k, v) -> {
+            if (ipCounters.remove(k, v)) ipSnapshot.put(k, v);
+        });
 
         currentWindowStart = windowEnd;
 
@@ -92,7 +97,7 @@ public class StatisticsAggregatorService {
             long pkts = adders[0].sum();
             long bytes = adders[1].sum();
             if (pkts > 0) {
-                String[] parts = key.split(":");
+                String[] parts = key.split(":", 3);
                 tStats.add(TrafficStatistics.builder()
                         .captureSessionId(Long.parseLong(parts[0]))
                         .protocol(parts[1])
@@ -114,7 +119,7 @@ public class StatisticsAggregatorService {
             long pkts = adders[0].sum();
             long bytes = adders[1].sum();
             if (pkts > 0) {
-                String[] parts = key.split(":");
+                String[] parts = key.split(":", 3);
                 iStats.add(IpStatistics.builder()
                         .captureSessionId(Long.parseLong(parts[0]))
                         .ipAddress(parts[1])

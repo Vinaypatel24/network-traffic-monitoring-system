@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +31,7 @@ public class ThreatDetectionEngine {
     private final EntityManager entityManager;
 
     @Async("taskExecutor")
+    @Transactional
     @EventListener
     public void onPacketBatchCaptured(PacketBatchCapturedEvent event) {
         List<PacketDTO> packets = event.getPackets();

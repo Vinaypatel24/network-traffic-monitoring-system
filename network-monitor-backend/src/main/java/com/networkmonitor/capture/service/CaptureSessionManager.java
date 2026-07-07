@@ -32,7 +32,8 @@ public class CaptureSessionManager {
 
     @Transactional
     public CaptureSession startSession(String username, Long interfaceId) {
-        User user = userRepository.findByUsername(username).orElseThrow();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
         
         Optional<CaptureSession> activeSession = captureSessionRepository.findByUserIdAndStatus(user.getId(), CaptureStatus.RUNNING);
         if (activeSession.isPresent()) {
@@ -69,7 +70,8 @@ public class CaptureSessionManager {
 
     @Transactional
     public CaptureSession stopSession(String username, Long sessionId) {
-        User user = userRepository.findByUsername(username).orElseThrow();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
         
         CaptureSession session = captureSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("CaptureSession", sessionId));
@@ -95,7 +97,8 @@ public class CaptureSessionManager {
     }
 
     public Page<CaptureSession> getUserSessions(String username, Pageable pageable) {
-        User user = userRepository.findByUsername(username).orElseThrow();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
         return captureSessionRepository.findByUserId(user.getId(), pageable);
     }
     
@@ -104,7 +107,8 @@ public class CaptureSessionManager {
     }
 
     public Optional<CaptureSession> getActiveSession(String username) {
-        User user = userRepository.findByUsername(username).orElseThrow();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
         return captureSessionRepository.findByUserIdAndStatus(user.getId(), CaptureStatus.RUNNING);
     }
 

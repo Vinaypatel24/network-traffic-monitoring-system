@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Shield, Lock, User, ArrowRight, Activity } from 'lucide-react';
 import '../index.css'; // Just to ensure styles are loaded
 
 const Login = () => {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -17,7 +19,7 @@ const Login = () => {
 
     const result = await login(username, password);
     if (result.success) {
-      window.location.href = '/dashboard';
+      navigate('/dashboard');
     } else {
       setError(result.error);
       setLoading(false);

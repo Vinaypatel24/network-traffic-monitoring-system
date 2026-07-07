@@ -70,6 +70,8 @@ const Dashboard = () => {
 
     return () => {
       webSocketService.disconnect();
+      webSocketService.onStats(null);
+      webSocketService.onAlert(null);
     };
   }, [token]);
 
@@ -137,8 +139,8 @@ const Dashboard = () => {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {alerts.map((alert, i) => (
-                <div key={i} style={{ 
+              {alerts.map((alert) => (
+                <div key={alert.id || alert.detectedAt} style={{ 
                   padding: '1rem', 
                   background: 'var(--bg-secondary)', 
                   borderLeft: `3px solid var(--${alert.severity.toLowerCase() === 'critical' ? 'danger' : 'warning'})`,
