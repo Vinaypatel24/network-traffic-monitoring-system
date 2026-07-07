@@ -45,7 +45,7 @@ public class ThreatDetectionEngine {
                     Optional<ThreatAlert> threatAlertOpt = strategy.analyze(packet);
                     threatAlertOpt.ifPresent(threatAlert -> {
                         AlertRule rule = alertRuleService.getRuleByType(threatAlert.alertType());
-                        if (rule != null && rule.isEnabled()) {
+                        if (rule != null && Boolean.TRUE.equals(rule.getEnabled())) {
                             // Deduplication/Spam control could be added here
                             Alert alert = Alert.builder()
                                     .rule(rule)

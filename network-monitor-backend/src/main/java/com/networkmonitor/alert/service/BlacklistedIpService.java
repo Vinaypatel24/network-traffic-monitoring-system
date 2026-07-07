@@ -71,7 +71,7 @@ public class BlacklistedIpService {
         dto.setReason(entity.getReason());
         dto.setAddedByUserId(entity.getAddedBy() != null ? entity.getAddedBy().getId() : null);
         dto.setAddedAt(entity.getAddedAt());
-        dto.setEnabled(entity.isEnabled());
+        dto.setEnabled(entity.getEnabled());
         return dto;
     }
 }
