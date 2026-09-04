@@ -5,6 +5,10 @@ import com.networkmonitor.statistics.entity.IpStatistics;
 import com.networkmonitor.statistics.entity.TrafficStatistics;
 import com.networkmonitor.statistics.repository.IpStatisticsRepository;
 import com.networkmonitor.statistics.repository.TrafficStatisticsRepository;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -32,6 +36,14 @@ public class StatisticsAggregatorService {
     // Keys: "sessionId:ip:direction" -> LongAdder[packets, bytes]
     private final Map<String, LongAdder[]> ipCounters = new ConcurrentHashMap<>();
 
+    // Short-term tick counters for real-time WebSocket dashboard broadcast
+    // Keys: "protocol" -> LongAdder[packets, bytes]
+    private final Map<String, LongAdder[]> tickCounters = new ConcurrentHashMap<>();
+
+    // Lifetime counters in memory
+    private final LongAdder totalPacketsAccumulator = new LongAdder();
+    private final LongAdder totalBytesAccumulator = new LongAdder();
+
     // Keep track of the current minute window
     private Instant currentWindowStart = Instant.now().truncatedTo(ChronoUnit.MINUTES);
 
@@ -40,9 +52,18 @@ public class StatisticsAggregatorService {
 
         for (PacketDTO pkt : packets) {
             int size = pkt.getPacketSize() != null ? pkt.getPacketSize() : 0;
+            String proto = pkt.getProtocol() != null ? pkt.getProtocol().toUpperCase() : "OTHER";
+
+            totalPacketsAccumulator.increment();
+            totalBytesAccumulator.add(size);
+
+            // Tick counter (for 1-second WebSocket emission)
+            LongAdder[] tickAdders = tickCounters.computeIfAbsent(proto, k -> new LongAdder[]{new LongAdder(), new LongAdder()});
+            tickAdders[0].increment();
+            tickAdders[1].add(size);
 
             // Traffic stats
-            String trafficKey = sessionId + ":" + pkt.getProtocol();
+            String trafficKey = sessionId + ":" + proto;
             LongAdder[] tAdders = trafficCounters.computeIfAbsent(trafficKey, k -> new LongAdder[]{new LongAdder(), new LongAdder()});
             tAdders[0].increment(); // packets
             tAdders[1].add(size);   // bytes
@@ -66,6 +87,37 @@ public class StatisticsAggregatorService {
     }
 
     /**
+     * Drains the packets and bytes accumulated since the last broadcast tick.
+     */
+    public List<TrafficTickDTO> drainTickStats() {
+        Map<String, LongAdder[]> snapshot = new java.util.HashMap<>();
+        tickCounters.forEach((k, v) -> {
+            if (tickCounters.remove(k, v)) {
+                snapshot.put(k, v);
+            }
+        });
+
+        List<TrafficTickDTO> result = new ArrayList<>();
+        snapshot.forEach((proto, adders) -> {
+            long pkts = adders[0].sum();
+            long bytes = adders[1].sum();
+            if (pkts > 0) {
+                result.add(new TrafficTickDTO(proto, pkts, bytes));
+            }
+        });
+
+        return result;
+    }
+
+    public long getTotalLifetimePackets() {
+        return totalPacketsAccumulator.sum();
+    }
+
+    public long getTotalLifetimeBytes() {
+        return totalBytesAccumulator.sum();
+    }
+
+    /**
      * Flushes counters to the database every minute.
      */
     @Scheduled(cron = "0 * * * * *")
@@ -77,8 +129,7 @@ public class StatisticsAggregatorService {
             return; // Not enough time has passed
         }
 
-        // Atomic drain: remove each key individually so packets arriving during drain
-        // go into the next window rather than being silently lost.
+        // Atomic drain
         Map<String, LongAdder[]> trafficSnapshot = new java.util.HashMap<>();
         trafficCounters.forEach((k, v) -> {
             if (trafficCounters.remove(k, v)) trafficSnapshot.put(k, v);
@@ -137,5 +188,26 @@ public class StatisticsAggregatorService {
         }
 
         log.info("Flushed {} traffic stats and {} IP stats for window {} - {}", tStats.size(), iStats.size(), windowStart, windowEnd);
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class TrafficTickDTO {
+        private String protocol;
+        private long packetCount;
+        private long byteCount;
+    }
+
+    @Data
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class SummaryOverviewDTO {
+        private long totalPackets;
+        private long totalBytes;
+        private long activeThreats;
+        private boolean hasActiveCapture;
+        private String activeInterface;
     }
 }

@@ -29,6 +29,7 @@ public class CaptureSessionManager {
     private final UserRepository userRepository;
     private final NetworkInterfaceService networkInterfaceService;
     private final PacketCaptureService packetCaptureService; // To actually start/stop pcap handle
+    private final CaptureSimulationService captureSimulationService;
 
     @Transactional
     public CaptureSession startSession(String username, Long interfaceId) {
@@ -57,7 +58,16 @@ public class CaptureSessionManager {
         }
 
         try {
-            packetCaptureService.startCapture(session, nic.getName());
+            if (nic.getName() != null && nic.getName().startsWith("virtual-demo")) {
+                captureSimulationService.startSimulation(session);
+            } else {
+                try {
+                    packetCaptureService.startCapture(session, nic.getName());
+                } catch (Exception nativeEx) {
+                    log.warn("Hardware capture failed ({}), falling back to simulation for session {}", nativeEx.getMessage(), session.getId());
+                    captureSimulationService.startSimulation(session);
+                }
+            }
         } catch (Exception e) {
             session.setStatus(CaptureStatus.ERROR);
             session.setEndTime(Instant.now());
@@ -85,7 +95,12 @@ public class CaptureSessionManager {
             return session;
         }
 
-        packetCaptureService.stopCapture(session.getId());
+        if (session.getInterfaceName() != null && session.getInterfaceName().startsWith("virtual-demo")) {
+            captureSimulationService.stopSimulation(session.getId());
+        } else {
+            packetCaptureService.stopCapture(session.getId());
+            captureSimulationService.stopSimulation(session.getId());
+        }
 
         session.setStatus(CaptureStatus.STOPPED);
         session.setEndTime(Instant.now());

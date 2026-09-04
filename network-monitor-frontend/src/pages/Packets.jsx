@@ -20,8 +20,9 @@ const Packets = () => {
       if (srcIp) params.append('srcIp', srcIp);
 
       const response = await api.get(`/packets?${params.toString()}`);
-      setPackets(response.data.content);
-      setTotalPages(response.data.totalPages);
+      const list = response.data?.data || response.data?.content || [];
+      setPackets(list);
+      setTotalPages(response.data?.totalPages || 0);
     } catch (error) {
       console.error('Failed to fetch packets:', error);
     } finally {

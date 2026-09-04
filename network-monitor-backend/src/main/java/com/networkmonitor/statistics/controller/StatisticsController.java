@@ -1,13 +1,16 @@
 package com.networkmonitor.statistics.controller;
 
+import com.networkmonitor.alert.repository.AlertRepository;
 import com.networkmonitor.capture.entity.CaptureSession;
 import com.networkmonitor.capture.repository.CaptureSessionRepository;
+import com.networkmonitor.capture.service.CaptureSessionManager;
 import com.networkmonitor.common.exception.ResourceNotFoundException;
 import com.networkmonitor.common.response.ApiResponse;
 import com.networkmonitor.statistics.entity.IpStatistics;
 import com.networkmonitor.statistics.entity.TrafficStatistics;
 import com.networkmonitor.statistics.repository.IpStatisticsRepository;
 import com.networkmonitor.statistics.repository.TrafficStatisticsRepository;
+import com.networkmonitor.statistics.service.StatisticsAggregatorService;
 import com.networkmonitor.user.entity.User;
 import com.networkmonitor.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/statistics")
@@ -29,6 +33,30 @@ public class StatisticsController {
     private final IpStatisticsRepository ipRepository;
     private final CaptureSessionRepository captureSessionRepository;
     private final UserRepository userRepository;
+    private final StatisticsAggregatorService statisticsAggregatorService;
+    private final AlertRepository alertRepository;
+    private final CaptureSessionManager captureSessionManager;
+
+    @GetMapping("/summary")
+    public ResponseEntity<ApiResponse<StatisticsAggregatorService.SummaryOverviewDTO>> getSummary(Authentication authentication) {
+        Optional<CaptureSession> activeSession = authentication != null 
+                ? captureSessionManager.getActiveSession(authentication.getName())
+                : Optional.empty();
+
+        long totalPackets = statisticsAggregatorService.getTotalLifetimePackets();
+        long totalBytes = statisticsAggregatorService.getTotalLifetimeBytes();
+        long alertsCount = alertRepository.count();
+
+        StatisticsAggregatorService.SummaryOverviewDTO dto = StatisticsAggregatorService.SummaryOverviewDTO.builder()
+                .totalPackets(totalPackets)
+                .totalBytes(totalBytes)
+                .activeThreats(alertsCount)
+                .hasActiveCapture(activeSession.isPresent())
+                .activeInterface(activeSession.map(CaptureSession::getInterfaceName).orElse(null))
+                .build();
+
+        return ResponseEntity.ok(ApiResponse.success(dto));
+    }
 
     @GetMapping("/traffic/{sessionId}")
     public ResponseEntity<ApiResponse<List<TrafficStatistics>>> getTrafficStats(

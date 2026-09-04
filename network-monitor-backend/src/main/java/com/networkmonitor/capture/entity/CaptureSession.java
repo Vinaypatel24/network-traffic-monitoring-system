@@ -1,5 +1,7 @@
 package com.networkmonitor.capture.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.networkmonitor.capture.enums.CaptureStatus;
 import com.networkmonitor.user.entity.User;
 import jakarta.persistence.*;
@@ -22,10 +24,12 @@ public class CaptureSession {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "interface_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private NetworkInterface networkInterface;
 
     @Column(name = "interface_name", length = 100)

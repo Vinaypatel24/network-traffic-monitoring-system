@@ -10,7 +10,8 @@ const Alerts = () => {
     setLoading(true);
     try {
       const response = await api.get('/alerts');
-      setAlerts(response.data.content);
+      const list = response.data?.data || response.data?.content || [];
+      setAlerts(list);
     } catch (error) {
       console.error('Failed to fetch alerts:', error);
     } finally {

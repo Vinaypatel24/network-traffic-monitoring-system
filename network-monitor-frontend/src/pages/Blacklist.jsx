@@ -12,7 +12,8 @@ const Blacklist = () => {
     setLoading(true);
     try {
       const response = await api.get('/blacklist');
-      setBlacklistedIps(response.data.content);
+      const list = response.data?.data || response.data?.content || [];
+      setBlacklistedIps(list);
     } catch (error) {
       console.error('Failed to fetch blacklist:', error);
     } finally {

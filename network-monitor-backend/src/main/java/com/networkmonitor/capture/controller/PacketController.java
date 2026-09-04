@@ -57,13 +57,16 @@ public class PacketController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<PageResponse<Packet>> getAllPackets(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(required = false) String protocol,
+            @RequestParam(required = false) String srcIp) {
         
-        // Admin-only global query
-        Page<Packet> packetPage = packetRepository.findAll(
+        Page<Packet> packetPage = packetRepository.findWithFilters(
+                protocol,
+                srcIp,
                 PageRequest.of(page, size, Sort.by("capturedAt").descending())
         );
 
