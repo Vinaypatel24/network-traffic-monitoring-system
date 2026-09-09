@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { AppDataProvider } from './context/AppDataContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 // Pages
 import Login from './pages/Login';
@@ -29,8 +31,14 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<Login />} />
       
-      {/* Protected Routes wrapped in Layout */}
-      <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+      {/* Protected Routes wrapped in Layout + shared data context */}
+      <Route element={
+        <ProtectedRoute>
+          <AppDataProvider>
+            <Layout />
+          </AppDataProvider>
+        </ProtectedRoute>
+      }>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/packets" element={<Packets />} />
@@ -46,11 +54,13 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
