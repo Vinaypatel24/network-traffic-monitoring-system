@@ -1,43 +1,29 @@
-import React, { useEffect, useState } from 'react';
-import api from '../services/api';
-import { ShieldAlert, CheckCircle, Clock, Bell } from 'lucide-react';
+import React, { useState } from 'react';
+import { useAppData } from '../context/AppDataContext';
+import { ShieldAlert, CheckCircle, Clock, Bell, Ban, ShieldCheck } from 'lucide-react';
+import ForensicResolveModal from '../components/ForensicResolveModal';
 
 const Alerts = () => {
-  const [alerts, setAlerts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { alerts, alertsLoading, fetchAlerts, resolveAlert, acknowledgeAlert } = useAppData();
+  const [selectedAlertForModal, setSelectedAlertForModal] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null); // alertId being actioned
 
-  const fetchAlerts = async () => {
-    setLoading(true);
+  const handleResolve = async (alertId, action) => {
+    setActionLoading(alertId + action);
     try {
-      const response = await api.get('/alerts');
-      const list = response.data?.data || response.data?.content || [];
-      setAlerts(list);
-    } catch (error) {
-      console.error('Failed to fetch alerts:', error);
+      await resolveAlert(alertId, action);
+    } catch (err) {
+      console.error('Failed to resolve alert:', err);
     } finally {
-      setLoading(false);
+      setActionLoading(null);
     }
   };
 
-  useEffect(() => {
-    fetchAlerts();
-  }, []);
-
-  const resolveAlert = async (id) => {
+  const handleAcknowledge = async (alertId) => {
     try {
-      await api.post(`/alerts/${id}/resolve`);
-      fetchAlerts();
-    } catch (error) {
-      console.error('Failed to resolve alert:', error);
-    }
-  };
-
-  const acknowledgeAlert = async (id) => {
-    try {
-      await api.post(`/alerts/${id}/acknowledge`);
-      fetchAlerts();
-    } catch (error) {
-      console.error('Failed to acknowledge alert:', error);
+      await acknowledgeAlert(alertId);
+    } catch (err) {
+      console.error('Failed to acknowledge alert:', err);
     }
   };
 
@@ -60,7 +46,7 @@ const Alerts = () => {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {loading ? (
+        {alertsLoading ? (
           <div className="flex-center" style={{ padding: '3rem' }}>Loading...</div>
         ) : alerts.length === 0 ? (
           <div className="glass-panel flex-center" style={{ padding: '3rem', color: 'var(--text-muted)' }}>
@@ -69,46 +55,66 @@ const Alerts = () => {
           </div>
         ) : (
           alerts.map(alert => (
-            <div key={alert.id} className="glass-panel" style={{ 
+            <div key={alert.id} className="glass-panel" style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               borderLeft: `4px solid ${getSeverityColor(alert.severity)}`
             }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+              <div style={{ flex: 1, marginRight: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
                   <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                     {alert.alertType}
                   </h3>
-                  <span className={`badge`} style={{ 
-                    background: `${getSeverityColor(alert.severity)}33`, 
-                    color: getSeverityColor(alert.severity) 
+                  <span className="badge" style={{
+                    background: `${getSeverityColor(alert.severity)}33`,
+                    color: getSeverityColor(alert.severity)
                   }}>
                     {alert.severity}
                   </span>
-                  <span className={`badge`} style={{ 
-                    background: alert.status === 'RESOLVED' ? 'var(--bg-glass-hover)' : 'rgba(239, 68, 68, 0.1)', 
-                    color: alert.status === 'RESOLVED' ? 'var(--text-secondary)' : 'var(--danger)' 
+                  <span className="badge" style={{
+                    background: alert.status === 'RESOLVED' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.1)',
+                    color: alert.status === 'RESOLVED' ? 'var(--success)' : 'var(--danger)'
                   }}>
                     {alert.status}
                   </span>
+                  {alert.confidenceScore && (
+                    <span className="badge" style={{ background: 'rgba(0, 240, 255, 0.12)', color: 'var(--accent-primary)', fontSize: '0.7rem' }}>
+                      {alert.confidenceScore}% Confidence
+                    </span>
+                  )}
                 </div>
-                
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.4rem' }}>
                   {alert.description}
                 </p>
-                
+
+                {alert.verdict && (
+                  <div style={{
+                    fontSize: '0.8rem',
+                    color: 'var(--accent-primary)',
+                    marginBottom: '0.4rem',
+                    background: 'rgba(0, 240, 255, 0.05)',
+                    padding: '0.3rem 0.6rem',
+                    borderRadius: '6px',
+                    display: 'inline-block'
+                  }}>
+                    <strong>Diagnosis:</strong> {alert.verdict}
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                     <Clock size={14} /> Detected: {new Date(alert.detectedAt).toLocaleString()}
                   </span>
-                  <span>Target: <strong>{alert.destinationIp || 'System'}</strong></span>
+                  <span>Source: <strong style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>{alert.sourceIp || 'Unknown'}</strong></span>
+                  <span>Target: <strong style={{ fontFamily: 'monospace' }}>{alert.destinationIp || 'System'}</strong></span>
                 </div>
               </div>
-              
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+
+              <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
                 {alert.status === 'NEW' && (
-                  <button 
-                    onClick={() => acknowledgeAlert(alert.id)}
-                    className="btn btn-outline" 
+                  <button
+                    onClick={() => handleAcknowledge(alert.id)}
+                    className="btn btn-outline"
                     style={{ color: 'var(--warning)', borderColor: 'rgba(245, 158, 11, 0.3)' }}
                     title="Acknowledge"
                   >
@@ -116,20 +122,51 @@ const Alerts = () => {
                   </button>
                 )}
                 {(alert.status === 'NEW' || alert.status === 'ACKNOWLEDGED') && (
-                  <button 
-                    onClick={() => resolveAlert(alert.id)}
-                    className="btn btn-outline" 
-                    style={{ color: 'var(--success)', borderColor: 'rgba(16, 185, 129, 0.3)' }}
-                    title="Resolve"
-                  >
-                    <CheckCircle size={18} /> Resolve
-                  </button>
+                  <>
+                    <button
+                      onClick={() => handleResolve(alert.id, 'BLACKLIST')}
+                      className="btn btn-danger"
+                      disabled={actionLoading === alert.id + 'BLACKLIST'}
+                      style={{ padding: '0.5rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                      title="Blacklist IP and resolve"
+                    >
+                      <Ban size={16} />
+                      {actionLoading === alert.id + 'BLACKLIST' ? '...' : 'Blacklist'}
+                    </button>
+                    <button
+                      onClick={() => handleResolve(alert.id, 'GENUINE')}
+                      className="btn btn-success"
+                      disabled={actionLoading === alert.id + 'GENUINE'}
+                      style={{ padding: '0.5rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                      title="Mark as genuine / false positive"
+                    >
+                      <CheckCircle size={16} />
+                      {actionLoading === alert.id + 'GENUINE' ? '...' : 'Genuine'}
+                    </button>
+                    <button
+                      onClick={() => setSelectedAlertForModal(alert)}
+                      className="btn btn-outline"
+                      style={{ padding: '0.5rem 0.7rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-primary)', borderColor: 'var(--border-color)' }}
+                      title="Full forensic analysis"
+                    >
+                      <ShieldCheck size={16} /> Analyze
+                    </button>
+                  </>
                 )}
               </div>
             </div>
           ))
         )}
       </div>
+
+      {/* Forensic Resolution Modal */}
+      {selectedAlertForModal && (
+        <ForensicResolveModal
+          alert={selectedAlertForModal}
+          onClose={() => setSelectedAlertForModal(null)}
+          onResolved={() => setSelectedAlertForModal(null)}
+        />
+      )}
     </div>
   );
 };
