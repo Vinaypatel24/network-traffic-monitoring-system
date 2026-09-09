@@ -18,7 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
@@ -29,6 +31,9 @@ public class ThreatDetectionEngine {
     private final AlertService alertService;
     private final AlertRuleService alertRuleService;
     private final EntityManager entityManager;
+
+    // Cooldown map: key -> last timestamp in millis (suppresses duplicate alerts within 5s)
+    private final Map<String, Long> alertCooldowns = new ConcurrentHashMap<>();
 
     @Async("taskExecutor")
     @Transactional
@@ -45,27 +50,36 @@ public class ThreatDetectionEngine {
                     Optional<ThreatAlert> threatAlertOpt = strategy.analyze(packet);
                     threatAlertOpt.ifPresent(threatAlert -> {
                         AlertRule rule = alertRuleService.getRuleByType(threatAlert.alertType());
-                        if (rule != null && Boolean.TRUE.equals(rule.getEnabled())) {
-                            // Deduplication/Spam control could be added here
-                            Alert alert = Alert.builder()
-                                    .rule(rule)
-                                    // CaptureSession ID needs to be set, but ThreatAlert has it
-                                    // We need to fetch CaptureSession entity, or just store the ID if we mapped it.
-                                    // Wait, Alert entity has a relationship to CaptureSession.
-                                    // We can map it loosely or fetch it.
-                                    .alertType(threatAlert.alertType())
-                                    .sourceIp(threatAlert.sourceIp())
-                                    .destinationIp(threatAlert.destinationIp())
-                                    .severity(AlertSeverity.valueOf(threatAlert.severity()))
-                                    .description(threatAlert.description())
-                                    .build();
-                            
-                            // For CaptureSession, we need a proxy reference to avoid full fetch:
-                            com.networkmonitor.capture.entity.CaptureSession sessionRef = entityManager.getReference(com.networkmonitor.capture.entity.CaptureSession.class, threatAlert.captureSessionId());
-                            alert.setCaptureSession(sessionRef);
-
-                            alertService.createAlert(alert);
+                        // If rule exists in database and is explicitly disabled, skip
+                        if (rule != null && Boolean.FALSE.equals(rule.getEnabled())) {
+                            return;
                         }
+
+                        // Deduplication: suppress multiple alerts for the same source IP & threat type within 5 seconds
+                        String dedupeKey = threatAlert.alertType() + ":" + (threatAlert.sourceIp() != null ? threatAlert.sourceIp() : "any");
+                        long now = System.currentTimeMillis();
+                        Long lastAlertTime = alertCooldowns.get(dedupeKey);
+                        if (lastAlertTime != null && (now - lastAlertTime) < 5000) {
+                            return;
+                        }
+                        alertCooldowns.put(dedupeKey, now);
+
+                        Alert alert = Alert.builder()
+                                .rule(rule)
+                                .alertType(threatAlert.alertType())
+                                .sourceIp(threatAlert.sourceIp())
+                                .destinationIp(threatAlert.destinationIp())
+                                .severity(AlertSeverity.valueOf(threatAlert.severity()))
+                                .description(threatAlert.description())
+                                .build();
+                        
+                        if (threatAlert.captureSessionId() != null) {
+                            com.networkmonitor.capture.entity.CaptureSession sessionRef =
+                                    entityManager.getReference(com.networkmonitor.capture.entity.CaptureSession.class, threatAlert.captureSessionId());
+                            alert.setCaptureSession(sessionRef);
+                        }
+
+                        alertService.createAlert(alert);
                     });
                 } catch (Exception e) {
                     log.error("Error executing threat detection strategy {}: {}", strategy.name(), e.getMessage());
