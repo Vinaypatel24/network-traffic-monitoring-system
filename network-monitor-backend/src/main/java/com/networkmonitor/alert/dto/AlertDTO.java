@@ -19,4 +19,9 @@ public class AlertDTO {
     private AlertStatus status;
     private Instant detectedAt;
     private Instant resolvedAt;
+
+    // Forensic Diagnosis & Heuristics
+    private String forensicDetails;
+    private Integer confidenceScore;
+    private String verdict;
 }
