@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.annotation.PostConstruct;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,6 +17,29 @@ import java.util.stream.Collectors;
 public class AlertRuleService {
 
     private final AlertRuleRepository alertRuleRepository;
+
+    @PostConstruct
+    @Transactional
+    public void initDefaultRules() {
+        createRuleIfNotExists("PORT_SCAN", 50.0, 10, "HIGH", "Port scan detection: contacts >50 distinct ports in 10s");
+        createRuleIfNotExists("TRAFFIC_SPIKE", 500.0, 5, "MEDIUM", "Traffic spike: >500 packets in 5s");
+        createRuleIfNotExists("ABNORMAL_REQUEST_RATE", 100.0, 30, "HIGH", "Abnormal request rate: >100 SYN attempts to service ports in 30s");
+        createRuleIfNotExists("SUSPICIOUS_CONNECTION", 1.0, 1, "CRITICAL", "Connection involving a blacklisted IP address");
+    }
+
+    private void createRuleIfNotExists(String ruleType, Double threshold, Integer windowSeconds, String severity, String description) {
+        if (alertRuleRepository.findByRuleType(ruleType).isEmpty()) {
+            AlertRule rule = AlertRule.builder()
+                    .ruleType(ruleType)
+                    .thresholdValue(threshold)
+                    .timeWindowSeconds(windowSeconds)
+                    .severity(severity)
+                    .enabled(true)
+                    .description(description)
+                    .build();
+            alertRuleRepository.save(rule);
+        }
+    }
 
     @Transactional(readOnly = true)
     public List<AlertRuleDTO> getAllRules() {

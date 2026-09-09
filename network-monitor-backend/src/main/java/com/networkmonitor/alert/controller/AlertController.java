@@ -11,6 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.networkmonitor.alert.dto.ResolveAlertRequest;
+import org.springframework.security.core.Authentication;
+
 @RestController
 @RequestMapping({"/api/alerts", "/api/v1/alerts"})
 @RequiredArgsConstructor
@@ -41,7 +44,11 @@ public class AlertController {
 
     @PostMapping("/{id}/resolve")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<AlertDTO> resolveAlert(@PathVariable Long id) {
-        return ResponseEntity.ok(alertService.resolveAlert(id));
+    public ResponseEntity<AlertDTO> resolveAlert(
+            @PathVariable Long id,
+            @RequestBody(required = false) ResolveAlertRequest request,
+            Authentication authentication) {
+        String username = authentication != null ? authentication.getName() : "admin";
+        return ResponseEntity.ok(alertService.resolveAlert(id, request, username));
     }
 }
