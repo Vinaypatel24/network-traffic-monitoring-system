@@ -8,52 +8,55 @@
 ## 1. High-Level System Architecture
 
 ```
-                                ┌──────────────────────────────────────────┐
-                                │              CLIENT (Browser)              │
-                                │  React SPA  +  Chart.js  +  STOMP Client   │
-                                └───────────────┬─────────────┬─────────────┘
-                                                 │ HTTPS/REST  │ WSS (STOMP over WebSocket)
-                                                 ▼             ▼
-                        ┌────────────────────────────────────────────────────┐
-                        │                 SPRING BOOT APPLICATION             │
-                        │ ┌────────────────┐  ┌───────────────────────────┐  │
-                        │ │  Security Layer │  │   WebSocket Broker (STOMP) │  │
-                        │ │ JWT Filter Chain│  │  /topic/packets            │  │
-                        │ │ Role Guard      │  │  /topic/statistics         │  │
-                        │ └───────┬─────────┘  │  /topic/alerts              │  │
-                        │         │            └──────────────┬──────────────┘  │
-                        │         ▼                           ▲                 │
-                        │ ┌──────────────────┐                │                 │
-                        │ │   REST Controllers │───────────────┘                 │
-                        │ └─────────┬─────────┘                                  │
-                        │           ▼                                           │
-                        │ ┌─────────────────────┐   ┌─────────────────────┐     │
-                        │ │  Service Layer       │──▶│ Threat Detection     │     │
-                        │ │ (Capture/Stats/Alert) │   │ Engine (Strategies)  │     │
-                        │ └─────────┬─────────────┘   └──────────┬───────────┘     │
-                        │           ▼                            │                  │
-                        │ ┌─────────────────────┐                 │                  │
-                        │ │ Packet Capture Engine │                 │                  │
-                        │ │ (Pcap4J + Bounded     │                 │                  │
-                        │ │  Queue + Worker Pool) │                 │                  │
-                        │ └─────────┬─────────────┘                 │                  │
-                        │           ▼                                ▼                  │
-                        │ ┌──────────────────────────────────────────────────┐         │
-                        │ │     Spring Data JPA / Hibernate Repositories      │         │
-                        │ └───────────────────────┬────────────────────────┘         │
-                        └─────────────────────────┼──────────────────────────────────┘
-                                                    ▼
-                                          ┌───────────────────┐
-                                          │   PostgreSQL DB    │
-                                          │ users, packets,    │
-                                          │ alerts, stats, ...  │
-                                          └───────────────────┘
-                                                    ▲
-                                          ┌───────────────────┐
-                                          │  Network Interface │
-                                          │  (NIC, promiscuous │
-                                          │   mode via libpcap)│
-                                          └───────────────────┘
+                                ┌────────────────────────────────────────────────────────────┐
+                                │                      CLIENT (Browser)                      │
+                                │         React SPA  +  Chart.js  +  STOMP Client            │
+                                └──────────────┬──────────────────────────────┬──────────────┘
+                                               │ HTTPS / REST                 │ WSS (STOMP over WebSocket)
+                                               ▼                              ▼
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                        SPRING BOOT APPLICATION                                         │
+│                                                                                                        │
+│   ┌───────────────────────────┐                            ┌───────────────────────────┐               │
+│   │       Security Layer      │                            │  WebSocket Broker (STOMP) │               │
+│   │      JWT Filter Chain     │                            │  /topic/packets           │               │
+│   │         Role Guard        │                            │  /topic/statistics        │               │
+│   │                           │                            │  /topic/alerts            │               │
+│   └─────────────┬─────────────┘                            └─────────────┬─────────────┘               │
+│                 │                                                        ▲                             │
+│                 ▼                                                        │                             │
+│   ┌───────────────────────────┐                                          │                             │
+│   │     REST Controllers      │──────────────────────────────────────────┘                             │
+│   └─────────────┬─────────────┘                                                                        │
+│                 ▼                                                                                      │
+│   ┌───────────────────────────┐                            ┌───────────────────────────┐               │
+│   │       Service Layer       │───────────────────────────▶│  Threat Detection Engine  │               │
+│   │   (Capture/Stats/Alert)   │                            │       (Strategies)        │               │
+│   └─────────────┬─────────────┘                            └─────────────┬─────────────┘               │
+│                 │                                                        │                             │
+│                 ▼                                                        │                             │
+│   ┌───────────────────────────┐                                          │                             │
+│   │   Packet Capture Engine   │                                          │                             │
+│   │  (Pcap4J + Bounded Queue  │                                          │                             │
+│   │       + Worker Pool)      │                                          │                             │
+│   └─────────────┬─────────────┘                                          │                             │
+│                 ▼                                                        ▼                             │
+│   ┌────────────────────────────────────────────────────────────────────────────────────┐               │
+│   │                      Spring Data JPA / Hibernate Repositories                      │               │
+│   └─────────────────────────────────────────────┬──────────────────────────────────────┘               │
+└─────────────────────────────────────────────────┼──────────────────────────────────────────────────────┘
+                                                  ▼
+                                    ┌───────────────────────────┐
+                                    │       PostgreSQL DB       │
+                                    │  users, packets, alerts,  │
+                                    │     statistics, rules     │
+                                    └─────────────┬─────────────┘
+                                                  ▲
+                                    ┌─────────────┴─────────────┐
+                                    │     Network Interface     │
+                                    │     (NIC, Promiscuous     │
+                                    │     Mode via libpcap)     │
+                                    └───────────────────────────┘
 ```
 
 **Logical layers (top → bottom):** Presentation (React) → API Gateway/Security (Spring Security + JWT) → Application/Service Layer → Domain Engines (Capture, Detection) → Persistence (JPA/Hibernate) → Database (PostgreSQL). WebSocket runs as a parallel, event-driven channel fed by the same service layer rather than a separate system, which keeps the architecture a **modular monolith** — the right complexity level for a student project, while every module is decoupled enough to be peeled into a microservice later (a strong interview talking point).
@@ -77,22 +80,20 @@
 ### Component Interaction Diagram (textual)
 
 ```
-PacketCaptureService --(raw bytes)--> BlockingQueue --(consumer threads)--> ProtocolParserFactory
-        |                                                                          |
-        |                                                                          v
-        |                                                                  PacketDTO (normalized)
-        |                                                                          |
-        |          ┌───────────────────────────────────────────────────────────────┼────────────────┐
-        |          v                                                               v                |
-        |   PacketRepository.batchInsert()                          StatisticsAggregatorService      |
-        |                                                                          |                  v
-        |                                                                          v          ThreatDetectionEngine
-        |                                                            TrafficStatisticsRepository      |
-        |                                                                                              v
-        +-------------------------------------------------------------------------------------> AlertRepository
-                                                                                                       |
-                                                                                                       v
-                                                                                     DashboardBroadcastService (WebSocket)
+PacketCaptureService ──(raw bytes)──▶ BlockingQueue ──(consumer threads)──▶ ProtocolParserFactory
+        │                                                                          │
+        │                                                                          ▼
+        │                                                                  PacketDTO (normalized)
+        │                                                                          │
+        │          ┌───────────────────────────────────────────────────────────────┼───────────────────────────────┐
+        │          ▼                                                               ▼                               ▼
+        │   PacketRepository.batchInsert()                          StatisticsAggregatorService      ThreatDetectionEngine
+        │                                                                          │                               │
+        │                                                                          ▼                               ▼
+        │                                                            TrafficStatisticsRepository            AlertRepository
+        │                                                                                                          │
+        │                                                                                                          ▼
+        └──────────────────────────────────────────────────────────────────────────────────────────────▶ DashboardBroadcastService
 ```
 
 ---
@@ -495,27 +496,25 @@ Request → CorsFilter → JwtAuthFilter (extracts & validates token, sets Secur
 ## 10. Packet Processing Pipeline
 
 ```
-[NIC, promiscuous mode]
-        │  Pcap4J PacketListener.gotPacket()
-        ▼
-[Capture Thread]  -- one per active session
-        │  offer() — non-blocking, bounded capacity (e.g., 50,000)
-        ▼
-[BlockingQueue<RawPacket>]   ←── backpressure: if full, drop oldest + increment "dropped" counter
-        │
-        ▼  poll() by a fixed-size worker pool (e.g., 4 threads, ExecutorService)
-[ProtocolParserFactory.parse(rawPacket)]
-        │  returns PacketDTO{srcIp, dstIp, srcPort, dstPort, protocol, size, ttl, flags, timestamp}
-        ▼
-   ┌─────────────┬────────────────────┬───────────────────────┐
-   ▼             ▼                    ▼                        ▼
-Batch buffer   In-memory counters   Sliding-window feed     (every 1s) WebSocket
-(flush every   (AtomicLong /        for ThreatDetection      batch broadcast
-500ms or       ConcurrentHashMap)   Engine
-2000 rows,
-whichever
-first) → JDBC
-batch INSERT
+                                [NIC, promiscuous mode]
+                                           │  Pcap4J PacketListener.gotPacket()
+                                           ▼
+                             [Capture Thread (per session)]
+                                           │  offer() — non-blocking, bounded capacity
+                                           ▼
+                                [BlockingQueue<RawPacket>]  ←── backpressure: drop oldest if full
+                                           │
+                                           ▼  poll() by fixed worker pool (e.g. 4 threads)
+                         [ProtocolParserFactory.parse(rawPacket)]
+                                           │  returns normalized PacketDTO
+                                           ▼
+         ┌──────────────────────────┬──────────────────────────┬──────────────────────────┐
+         ▼                          ▼                          ▼                          ▼
+┌─────────────────┐        ┌─────────────────┐        ┌─────────────────┐        ┌─────────────────┐
+│  Batch Buffer   │        │ In-Memory Stats │        │ Sliding Window  │        │    WebSocket    │
+│  (JDBC Batch    │        │ (ConcurrentMap  │        │ (Threat Engine  │        │   (1s Batched   │
+│     Insert)     │        │    Rollups)     │        │  Evaluation)    │        │   Broadcast)    │
+└─────────────────┘        └─────────────────┘        └─────────────────┘        └─────────────────┘
 ```
 
 **Why this design:** a single capture thread must never block on I/O (DB writes, JSON serialization) or it will drop packets at the kernel buffer level. Decoupling *capture* from *processing* via a bounded queue (classic **Producer–Consumer**) is the single most important performance decision in this project and is exactly the kind of thing interviewers probe on.
