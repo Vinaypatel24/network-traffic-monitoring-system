@@ -9,6 +9,7 @@
 ![Pcap4J](https://img.shields.io/badge/Pcap4J-Live_Capture-red?style=for-the-badge)
 ![WebSocket](https://img.shields.io/badge/WebSocket-STOMP-blue?style=for-the-badge)
 ![Database](https://img.shields.io/badge/Storage-H2%20%7C%20PostgreSQL-336791?style=for-the-badge&logo=postgresql)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 <br/>
 
@@ -151,4 +152,4 @@ docker-compose up --build -d
 
 ## 📄 License
 
-This project is licensed under the MIT License — see the repository files for details.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
