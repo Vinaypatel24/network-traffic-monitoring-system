@@ -35,6 +35,16 @@ public class AuthController {
         }
     }
 
+    /**
+     * Endpoint used by the frontend on startup to determine whether the application needs
+     * an initial admin setup. Returns {@code true} when no users exist yet.
+     */
+    @GetMapping("/first-setup")
+    public ResponseEntity<ApiResponse<Boolean>> firstSetup() {
+        boolean needsSetup = authService.isFirstSetup();
+        return ResponseEntity.ok(ApiResponse.success(needsSetup));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<JwtResponse>> login(@Valid @RequestBody LoginRequest request) {
         AuthService.AuthResult result = authService.login(request);

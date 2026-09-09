@@ -44,7 +44,7 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .headers(headers -> headers.frameOptions(frame -> frame.disable()))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh").permitAll()
+                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh", "/api/auth/first-setup").permitAll()
                 .requestMatchers("/ws/**").permitAll() // Handshake secured via interceptor, not HTTP filter
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
