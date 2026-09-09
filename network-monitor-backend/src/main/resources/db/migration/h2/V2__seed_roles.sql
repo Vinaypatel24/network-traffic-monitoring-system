@@ -8,13 +8,13 @@ INSERT INTO roles (name) VALUES
     ('ROLE_ADMIN'),
     ('ROLE_USER');
 
--- Default admin user (password = 'Admin@1234')
--- BCrypt hash generated for 'Admin@1234'
+-- Default admin user (password = 'admin')
+-- BCrypt hash generated for 'admin'
 INSERT INTO users (username, email, password_hash, enabled)
 VALUES (
     'admin',
     'admin@networkmonitor.local',
-    '$2a$12$gh1rymSIo.RCES.rvGI7LuQr.EhNYhghGWibyQODUckS6bIrSkYNe',
+    '$2a$10$Q.l/ZtjQs7uIn3AzX.DkReRdQ1zVIiE95l6/9krD7itWH49w3ddrm',
     TRUE
 );
 
