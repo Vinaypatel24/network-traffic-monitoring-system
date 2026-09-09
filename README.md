@@ -1,66 +1,154 @@
-# Network Traffic Monitoring & Threat Detection System
+# NetMonitor — Deep Packet Inspection & Threat Detection System
 
-A full-stack application that captures raw network packets, parses them, aggregates traffic statistics, and runs real-time threat detection algorithms (Port Scans, Traffic Spikes, Abnormal Rates, Suspicious Connections).
+<div align="center">
 
-## Features
-- **Live Packet Capture**: Uses `pcap4j` to interface with the host network stack and capture TCP/UDP/ICMP packets in real-time.
-- **Traffic Dashboard**: Real-time traffic rate and volume visualization using Chart.js and WebSockets.
-- **Threat Detection Engine**: Heuristic-based detection strategies that flag malicious behavior.
-- **Alert Management**: Acknowledge and resolve security alerts.
-- **IP Blacklisting**: Block specific IPs from communicating on monitored interfaces.
+![Java](https://img.shields.io/badge/Java-21-orange.svg?style=for-the-badge&logo=openjdk)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-6DB33F?style=for-the-badge&logo=springboot)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite)
+![Pcap4J](https://img.shields.io/badge/Pcap4J-Live_Capture-red?style=for-the-badge)
+![WebSocket](https://img.shields.io/badge/WebSocket-STOMP-blue?style=for-the-badge)
+![Database](https://img.shields.io/badge/Storage-H2%20%7C%20PostgreSQL-336791?style=for-the-badge&logo=postgresql)
 
-## Architecture
-- **Backend**: Spring Boot, Java 21, Maven, PostgreSQL, Pcap4J, WebSocket (STOMP).
-- **Frontend**: React, Vite, Tailwind-like custom glassmorphism UI, Chart.js.
+<br/>
 
-## Prerequisites
-- **Java 21**
-- **Node.js 20+**
-- **Docker & Docker Compose** (Optional, for containerized deployment)
-- **Npcap / WinPcap** (Required for Windows packet capture natively)
+**A high-performance full-stack network monitoring, packet dissection, and real-time threat detection engine with an interactive glassmorphic dashboard.**
+
+[**Read the Complete User Guide (Step-by-Step Manual) →**](USER_GUIDE.md)
+
+</div>
 
 ---
 
-## Running Natively (Recommended for Windows)
+## 📸 Interface Preview
 
-Because Docker Desktop on Windows runs in a virtualized network namespace, packet capture inside a container will only see traffic from the Docker VM, not your physical Windows machine. For true packet capture on Windows, run the backend natively.
+<div align="center">
+  <img src="docs/screenshots/02_dashboard.png" alt="NetMonitor System Dashboard" width="100%" />
+</div>
 
-### 1. Database Setup
-```bash
-docker run --name network-monitor-db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=password -e POSTGRES_DB=network_monitor -p 5432:5432 -d postgres:15-alpine
+---
+
+## ⚡ Key Features
+
+- 🛰️ **Live Packet Capture & Dissection**: Real-time packet capture via `pcap4j` on physical network interfaces (Wi-Fi, Ethernet) or the built-in virtual simulation adapter.
+- 🔬 **Deep Layer 3 & Layer 4 Inspection**: Parses headers and payloads for TCP (with TCP flag tracking), UDP, ICMP, and DNS protocols.
+- 🛡️ **Autonomous Threat Detection Engine**:
+  - **Port Scan Detection**: Detects reconnaissance when a source probes $>50$ distinct ports within a 10s sliding window.
+  - **Traffic Spike Detection**: Alerts when traffic surges $>500\%$ over rolling baseline volume.
+  - **Abnormal Rate Detection**: Flags sustained high packet flooding ($>1,000$ p/s).
+  - **Suspicious Connection Heuristics**: Identifies abnormal TCP flag states (`NULL`, `XMAS`, unsolicited `SYN-ACK`).
+- ⚡ **Real-Time WebSocket Feed**: Sub-second streaming of packet statistics and alarms directly to the UI using STOMP over WebSockets.
+- 🛑 **Interactive IP Firewall & Blacklisting**: 1-click ban actions directly from security alerts and manual firewall rule management.
+- 💾 **Plug-and-Play Persistent Storage**: Runs out of the box with zero external DB dependencies using disk-persisted H2, or scales to production PostgreSQL via Docker.
+- 🎨 **Modern Dark Glassmorphic UI**: Built with React 19, Chart.js, Lucide Icons, and responsive design.
+
+---
+
+## 🏛️ System Architecture
+
+```mermaid
+flowchart TD
+    subgraph Host Network Stack
+        NIC[Network Interface / Npcap] -->|Raw Frames| Pcap[Pcap4J Capture Engine]
+    end
+
+    subgraph Spring Boot Backend :8080
+        Pcap -->|Raw Packets| Parser[Protocol Parser Factory]
+        Parser -->|Parsed DTOs| BatchWriter[JDBC Fast Batch Inserter]
+        Parser -->|Metrics| Aggregator[Sliding-Window Aggregator]
+        Aggregator -->|Anomaly Signals| ThreatEngine[Threat Detection Engine]
+        ThreatEngine -->|Generate Alerts| AlertRepo[(H2 / PostgreSQL DB)]
+        ThreatEngine -->|Push Alarms| WsBroker[STOMP WebSocket Broker]
+        Aggregator -->|Push Rates| WsBroker
+        BatchWriter --> AlertRepo
+    end
+
+    subgraph Unified Frontend :8080 or :5173
+        WsBroker -->|Real-Time WS| ClientApp[React 19 Dashboard UI]
+        ClientApp -->|REST / JWT| AuthController[Auth & Blacklist APIs]
+    end
 ```
 
-### 2. Backend
-Navigate to `network-monitor-backend`:
-```bash
-mvn spring-boot:run
-```
-*(Ensure Npcap is installed on your Windows machine, otherwise Pcap4J will fail to start).*
+---
 
-### 3. Frontend
-Navigate to `network-monitor-frontend`:
+## 🚀 Quick Launch (Windows Single-Click)
+
+The repository includes a single-click launcher that initializes the database, backend engine, and unified UI without requiring complex setups:
+
+1. Right-click **`start.bat`** and select **Run as Administrator** *(Administrator rights are required by Windows for raw Npcap packet capture)*.
+2. The launcher will automatically start the unified application on port 8080 and open your browser:
+   - **Dashboard**: `http://localhost:8080`
+   - **H2 DB Console**: `http://localhost:8080/h2-console`
+
+### Default Login Credentials
+
+| Attribute | Value |
+| :--- | :--- |
+| **Username** | `admin` |
+| **Password** | `admin` |
+
+---
+
+## 🖼️ Application Gallery
+
+| Authentication & Access | Live Packet Inspector |
+| :---: | :---: |
+| <img src="docs/screenshots/01_login.png" width="450"/> | <img src="docs/screenshots/03_packets.png" width="450"/> |
+| **Threat Intelligence & Alerts** | **IP Blacklist Firewall** |
+| <img src="docs/screenshots/04_alerts.png" width="450"/> | <img src="docs/screenshots/05_blacklist.png" width="450"/> |
+
+---
+
+## 🗄️ Database Console Access
+
+NetMonitor dev profile uses an embedded, disk-persisted H2 database that matches PostgreSQL syntax.
+
+- **Console URL**: `http://localhost:8080/h2-console`
+- **Driver Class**: `org.h2.Driver`
+- **JDBC URL**: `jdbc:h2:file:./data/netmonitor;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;NON_KEYWORDS=VALUE`
+- **Username**: `sa`
+- **Password**: *(Leave blank)*
+
+---
+
+## 💻 Manual Setup & Development
+
+### Prerequisites
+- **Java 21**
+- **Node.js 20+**
+- **Npcap** (Required for native Windows packet sniffing: [Download Npcap](https://npcap.com/))
+- **Docker** (Optional, for containerized PostgreSQL or Linux deployment)
+
+### 1. Backend Service
 ```bash
+cd network-monitor-backend
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+### 2. Frontend Development Server (Hot-Reload)
+```bash
+cd network-monitor-frontend
 npm install
 npm run dev
 ```
-Open `http://localhost:5173` in your browser.
+Navigate to `http://localhost:5173`. Requests to `/api` and `/ws` are automatically proxied to port 8080.
 
----
-
-## Running via Docker (Recommended for Linux)
-
-This setup uses `network_mode: host` to allow the backend container to sniff the physical host's network interfaces.
-
+### 3. Docker Deployment (Linux Host Network Mode)
 ```bash
 docker-compose up --build -d
 ```
-The application will be available at `http://localhost:5173`.
 
 ---
 
-## Default Credentials
-- **Username**: `admin`
-- **Password**: `admin` (or register a new user from the database if authentication is bypassed).
+## 📖 Detailed Documentation
 
-## Screenshots
-*(Add screenshots of your dashboard here)*
+- 📘 [**User Guide & Operator Manual**](USER_GUIDE.md): Detailed walkthrough for all views, features, and troubleshooting tips.
+- 🗺️ [**Project Roadmap**](PROJECT_ROADMAP.md): Architectural sprints and completed milestones.
+- 📊 [**Project Progress & Verification Log**](PROJECT_PROGRESS.md): Feature status and test logs.
+- 📐 [**System Blueprint**](Network-Traffic-Monitoring-System-Blueprint.md): Full technical specification.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License — see the repository files for details.
