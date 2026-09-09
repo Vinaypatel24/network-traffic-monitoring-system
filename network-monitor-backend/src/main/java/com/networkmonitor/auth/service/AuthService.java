@@ -37,6 +37,11 @@ public class AuthService {
     @Value("${jwt.expiry-ms}")
     private long jwtExpiryMs;
 
+    // Returns true if no users exist yet – i.e., the application needs initial setup
+    public boolean isFirstSetup() {
+        return userRepository.count() == 0L;
+    }
+
     @Transactional
     public UserDTO register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
