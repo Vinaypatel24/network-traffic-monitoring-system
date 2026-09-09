@@ -1,11 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useAppData } from '../context/AppDataContext';
+import { useTheme } from '../context/ThemeContext';
 import webSocketService from '../services/WebSocketService';
 import api from '../services/api';
 import { 
   Activity, ShieldAlert, Zap, Box, HardDrive, 
-  Play, Square, Radio, Wifi, Sparkles, RefreshCw 
+  Play, Square, Radio, Wifi, Sparkles, RefreshCw
 } from 'lucide-react';
+import ForensicResolveModal from '../components/ForensicResolveModal';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -36,19 +39,30 @@ const StatCard = ({ title, value, icon, color }) => (
 );
 
 const Dashboard = () => {
+  const { isDark } = useTheme();
   const { token } = useAuth();
+  const { alerts, resolveAlert } = useAppData();  // shared state
   const [statsHistory, setStatsHistory] = useState([]);
-  const [alerts, setAlerts] = useState([]);
   const [currentStats, setCurrentStats] = useState({ totalPackets: 0, totalBytes: 0, rate: 0 });
   
   // Connection and Session States
   const [wsConnected, setWsConnected] = useState(false);
   const [interfaces, setInterfaces] = useState([]);
   const [selectedInterface, setSelectedInterface] = useState('');
+  // Load persisted interface selection from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('selectedInterface');
+    if (saved) setSelectedInterface(saved);
+  }, []);
+  // Persist selection changes
+  useEffect(() => {
+    if (selectedInterface) localStorage.setItem('selectedInterface', selectedInterface);
+  }, [selectedInterface]);
   const [activeSession, setActiveSession] = useState(null);
   const [sessionLoading, setSessionLoading] = useState(false);
+  const [selectedAlertForModal, setSelectedAlertForModal] = useState(null);
 
-  // ─── Fetch Initial Data ────────────────────────────────────────────────────
+  // ─── Fetch Initial Data (stats, interfaces, session only — alerts from context) ──
   const fetchInitialData = useCallback(async () => {
     try {
       // 1. Fetch System Summary Overview
@@ -79,11 +93,6 @@ const Dashboard = () => {
         setActiveSession(null);
       }
 
-      // 4. Fetch Recent Alerts
-      const alertsRes = await api.get('/alerts').catch(() => null);
-      const initialAlerts = alertsRes?.data?.data || alertsRes?.data?.content || [];
-      setAlerts(initialAlerts.slice(0, 15));
-
     } catch (err) {
       console.warn('Error loading initial dashboard data:', err);
     }
@@ -93,7 +102,7 @@ const Dashboard = () => {
     fetchInitialData();
   }, [fetchInitialData]);
 
-  // ─── WebSocket Subscriptions ───────────────────────────────────────────────
+  // ─── WebSocket Subscriptions (stats + status only — alerts handled by context) ─
   useEffect(() => {
     if (token) {
       webSocketService.onStatusChange((status) => {
@@ -121,20 +130,14 @@ const Dashboard = () => {
 
         setStatsHistory(prev => {
           const newHistory = [...prev, { time: new Date().toLocaleTimeString(), packets: tickPackets }];
-          if (newHistory.length > 20) newHistory.shift(); // Keep last 20 ticks
+          if (newHistory.length > 20) newHistory.shift();
           return newHistory;
         });
-      });
-
-      webSocketService.onAlert((alert) => {
-        setAlerts(prev => [alert, ...prev.filter(a => a.id !== alert.id)].slice(0, 15));
       });
     }
 
     return () => {
-      webSocketService.disconnect();
       webSocketService.onStats(null);
-      webSocketService.onAlert(null);
       webSocketService.onStatusChange(null);
     };
   }, [token]);
@@ -181,7 +184,23 @@ const Dashboard = () => {
     }
   };
 
+  // Quick resolve from the dashboard threat feed — delegates to shared context
+  const quickResolve = async (alertId, action) => {
+    try {
+      await resolveAlert(alertId, action);
+    } catch (err) {
+      console.error('Failed to resolve alert:', err);
+    }
+  };
+
   // ─── Chart Config ─────────────────────────────────────────────────────────
+  const chartColor = isDark ? '#6366f1' : '#4f46e5';
+  const chartBg = isDark ? 'rgba(99, 102, 241, 0.16)' : 'rgba(79, 70, 229, 0.12)';
+  const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
+  const tickColor = isDark ? '#94a3b8' : '#64748b';
+  const tooltipBg = isDark ? '#191c27' : '#ffffff';
+  const tooltipBorder = isDark ? 'rgba(99, 102, 241, 0.4)' : 'rgba(79, 70, 229, 0.25)';
+
   const chartData = {
     labels: statsHistory.length > 0 
       ? statsHistory.map(s => s.time) 
@@ -192,12 +211,13 @@ const Dashboard = () => {
         data: statsHistory.length > 0 
           ? statsHistory.map(s => s.packets) 
           : Array(10).fill(0),
-        borderColor: '#00f0ff',
-        backgroundColor: 'rgba(0, 240, 255, 0.12)',
+        borderColor: chartColor,
+        backgroundColor: chartBg,
         fill: true,
         tension: 0.4,
-        pointRadius: 2,
-        pointBackgroundColor: '#00f0ff',
+        pointRadius: 3,
+        pointBackgroundColor: chartColor,
+        pointHoverRadius: 6,
       }
     ]
   };
@@ -205,24 +225,28 @@ const Dashboard = () => {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    animation: { duration: 400 },
+    animation: { duration: 350 },
     scales: {
       y: { 
-        grid: { color: 'rgba(255,255,255,0.05)' }, 
-        ticks: { color: '#94a3b8', precision: 0 }, 
+        grid: { color: gridColor }, 
+        ticks: { color: tickColor, precision: 0 }, 
         beginAtZero: true 
       },
       x: { 
         grid: { display: false }, 
-        ticks: { color: '#94a3b8', maxTicksLimit: 8 } 
+        ticks: { color: tickColor, maxTicksLimit: 8 } 
       }
     },
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: '#131b2e',
-        borderColor: '#00f0ff',
-        borderWidth: 1
+        backgroundColor: tooltipBg,
+        titleColor: isDark ? '#f8fafc' : '#0f172a',
+        bodyColor: isDark ? '#f8fafc' : '#0f172a',
+        borderColor: tooltipBorder,
+        borderWidth: 1,
+        padding: 10,
+        boxPadding: 4,
       }
     }
   };
@@ -341,7 +365,7 @@ const Dashboard = () => {
         <StatCard title="Packet Rate" value={`${currentStats.rate}/s`} icon={<Activity size={24} />} color="0, 240, 255" />
         <StatCard title="Total Packets" value={currentStats.totalPackets.toLocaleString()} icon={<Box size={24} />} color="16, 185, 129" />
         <StatCard title="Data Volume" value={formatBytes(currentStats.totalBytes)} icon={<HardDrive size={24} />} color="245, 158, 11" />
-        <StatCard title="Active Threats" value={alerts.length} icon={<ShieldAlert size={24} />} color="255, 0, 60" />
+        <StatCard title="Active Threats" value={alerts.filter(a => a.status !== 'RESOLVED').length} icon={<ShieldAlert size={24} />} color="255, 0, 60" />
       </div>
 
       {/* ─── Traffic Graph & Threat Feed ──────────────────────────────────── */}
@@ -385,18 +409,45 @@ const Dashboard = () => {
                   borderRadius: '0 8px 8px 0'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{alert.alertType}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{alert.alertType}</span>
+                      {alert.status === 'RESOLVED' && (
+                        <span className="badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)', fontSize: '0.65rem' }}>
+                          Resolved
+                        </span>
+                      )}
+                    </div>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       {alert.detectedAt ? new Date(alert.detectedAt).toLocaleTimeString() : 'Just now'}
                     </span>
                   </div>
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
-                    {alert.sourceIp} → {alert.destinationIp || 'System'}
+                    <strong style={{ fontFamily: 'monospace' }}>{alert.sourceIp}</strong> → <span style={{ fontFamily: 'monospace' }}>{alert.destinationIp || 'System'}</span>
                   </p>
                   {alert.description && (
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
                       {alert.description}
                     </p>
+                  )}
+                  {alert.status !== 'RESOLVED' && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.4rem', marginTop: '0.5rem' }}>
+                      <button
+                        onClick={() => quickResolve(alert.id, 'BLACKLIST')}
+                        className="btn btn-danger"
+                        style={{ padding: '0.2rem 0.55rem', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                        title="Blacklist IP"
+                      >
+                        Blacklist
+                      </button>
+                      <button
+                        onClick={() => quickResolve(alert.id, 'GENUINE')}
+                        className="btn btn-success"
+                        style={{ padding: '0.2rem 0.55rem', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                        title="Mark as genuine"
+                      >
+                        Genuine
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}
@@ -404,6 +455,15 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Forensic Resolution Modal on Dashboard */}
+      {selectedAlertForModal && (
+        <ForensicResolveModal
+          alert={selectedAlertForModal}
+          onClose={() => setSelectedAlertForModal(null)}
+          onResolved={() => setSelectedAlertForModal(null)}
+        />
+      )}
     </div>
   );
 };

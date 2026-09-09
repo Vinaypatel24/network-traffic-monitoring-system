@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Lock, User, ArrowRight, Activity } from 'lucide-react';
+import { Shield, Lock, User, ArrowRight, Activity, Sun, Moon } from 'lucide-react';
 import '../index.css'; // Just to ensure styles are loaded
 
 const Login = () => {
   const { login } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -27,7 +29,19 @@ const Login = () => {
   };
 
   return (
-    <div className="flex-center" style={{ minHeight: '100vh', padding: '2rem' }}>
+    <div className="flex-center" style={{ minHeight: '100vh', padding: '2rem', position: 'relative' }}>
+      
+      {/* Theme toggle in top right */}
+      <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 10 }}>
+        <button
+          onClick={toggleTheme}
+          className="theme-toggle-btn"
+          title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          aria-label="Toggle Theme"
+        >
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+      </div>
       
       {/* Background decorative elements */}
       <div style={{
