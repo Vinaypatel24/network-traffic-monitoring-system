@@ -4,7 +4,12 @@ target/
 *.jar
 *.war
 *.ear
+*.zip
 .mvn/wrapper/maven-wrapper.jar
+apache-maven-*/
+data/
+*.mv.db
+*.trace.db
 
 # ─── Spring Boot ────────────────────────────────
 *.log
