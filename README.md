@@ -2,6 +2,7 @@
 
 <div align="center">
 
+[![NetMonitor CI](https://github.com/Vinaypatel24/network-traffic-monitoring-system/actions/workflows/ci.yml/badge.svg)](https://github.com/Vinaypatel24/network-traffic-monitoring-system/actions/workflows/ci.yml)
 ![Java](https://img.shields.io/badge/Java-21-orange.svg?style=for-the-badge&logo=openjdk)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-6DB33F?style=for-the-badge&logo=springboot)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
