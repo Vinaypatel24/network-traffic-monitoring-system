@@ -2,7 +2,14 @@
 
 <div align="center">
 
-[![NetMonitor CI](https://github.com/Vinaypatel24/network-traffic-monitoring-system/actions/workflows/ci.yml/badge.svg)](https://github.com/Vinaypatel24/network-traffic-monitoring-system/actions/workflows/ci.yml)
+[![CI Build](https://img.shields.io/github/actions/workflow/status/Vinaypatel24/network-traffic-monitoring-system/ci.yml?branch=main&style=for-the-badge&logo=githubactions&label=CI%20Build)](https://github.com/Vinaypatel24/network-traffic-monitoring-system/actions)
+![Threat Engine](https://img.shields.io/badge/Threat_Engine-Autonomous_Active-brightgreen.svg?style=for-the-badge&logo=securityscorecard)
+![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg?style=for-the-badge&logo=git)
+[![Stars](https://img.shields.io/github/stars/Vinaypatel24/network-traffic-monitoring-system?style=for-the-badge&logo=github&color=gold)](https://github.com/Vinaypatel24/network-traffic-monitoring-system/stargazers)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+
+<br/>
+
 ![Java](https://img.shields.io/badge/Java-21-orange.svg?style=for-the-badge&logo=openjdk)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-6DB33F?style=for-the-badge&logo=springboot)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
@@ -10,7 +17,6 @@
 ![Pcap4J](https://img.shields.io/badge/Pcap4J-Live_Capture-red?style=for-the-badge)
 ![WebSocket](https://img.shields.io/badge/WebSocket-STOMP-blue?style=for-the-badge)
 ![Database](https://img.shields.io/badge/Storage-H2%20%7C%20PostgreSQL-336791?style=for-the-badge&logo=postgresql)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 <br/>
 
