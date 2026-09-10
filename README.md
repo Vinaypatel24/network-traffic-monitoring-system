@@ -166,6 +166,29 @@ docker-compose up --build -d
 
 ---
 
+## 🤝 Contributing & Community
+
+Contributions make the open-source community an amazing place to learn, inspire, and build. Any contributions you make are **greatly appreciated**!
+
+- 🍴 Want to build new features or experiment with network forensics? Feel free to **[Fork this Repository](https://github.com/Vinaypatel24/network-traffic-monitoring-system/fork)**!
+- 📖 Read the **[Contributing Guidelines](CONTRIBUTING.md)** for local setup, architecture tips, and beginner-friendly feature ideas.
+
+---
+
+## ⭐ Show Your Support
+
+If you find **NetMonitor** useful or interesting, please consider giving it a **Star ⭐** and **Forking 🍴** it! Your support helps others discover this project.
+
+<div align="center">
+
+[![Star on GitHub](https://img.shields.io/badge/Star%20on%20GitHub-⭐-gold?style=for-the-badge&logo=github)](https://github.com/Vinaypatel24/network-traffic-monitoring-system/stargazers)
+&nbsp;
+[![Fork on GitHub](https://img.shields.io/badge/Fork%20Repository-🍴-blue?style=for-the-badge&logo=github)](https://github.com/Vinaypatel24/network-traffic-monitoring-system/fork)
+
+</div>
+
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
