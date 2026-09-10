@@ -1,0 +1,56 @@
+name: NetMonitor CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  backend-ci:
+    name: Backend Build & Tests (Java 21)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Eclipse Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Install libpcap (Pcap4J native dependency)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libpcap-dev
+
+      - name: Compile & Run Unit Tests
+        working-directory: ./network-monitor-backend
+        run: mvn clean test --batch-mode
+
+  frontend-ci:
+    name: Frontend Build (React 19 + Vite)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: network-monitor-frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: ./network-monitor-frontend
+        run: npm ci
+
+      - name: Validate Production Build
+        working-directory: ./network-monitor-frontend
+        run: npm run build
