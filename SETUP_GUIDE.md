@@ -8,22 +8,22 @@
 
 ## 📋 Table of Contents
 
-1. [What You'll Be Installing](#1--what-youll-be-installing)
-2. [Step 1 — Install Git](#2--step-1--install-git)
-3. [Step 2 — Install Java 21 (JDK)](#3--step-2--install-java-21-jdk)
-4. [Step 3 — Install Node.js](#4--step-3--install-nodejs)
-5. [Step 4 — Install Npcap (Packet Capture Driver)](#5--step-4--install-npcap-packet-capture-driver)
-6. [Step 5 — Create a Folder & Clone the Project](#6--step-5--create-a-folder--clone-the-project)
-7. [Step 6 — Run the Backend (Spring Boot Server)](#7--step-6--run-the-backend-spring-boot-server)
-8. [Step 7 — Run the Frontend (React Dashboard)](#8--step-7--run-the-frontend-react-dashboard)
-9. [Step 8 — Open the App in Your Browser](#9--step-8--open-the-app-in-your-browser)
-10. [Alternative: One-Click Launch (Quick Start)](#10--alternative-one-click-launch-quick-start)
-11. [Alternative: Docker Deployment](#11--alternative-docker-deployment)
-12. [Troubleshooting](#12--troubleshooting)
+1. [Prerequisites — What You'll Need](#-prerequisites--what-youll-need)
+2. [Install Git](#step-1--install-git)
+3. [Install Java 21 (JDK)](#step-2--install-java-21-jdk)
+4. [Install Node.js](#step-3--install-nodejs)
+5. [Install Npcap (Packet Capture Driver)](#step-4--install-npcap-packet-capture-driver)
+6. [Create a Folder & Clone the Project](#step-5--create-a-folder--clone-the-project)
+7. [Run the Backend (Spring Boot Server)](#step-6--run-the-backend-spring-boot-server)
+8. [Run the Frontend (React Dashboard)](#step-7--run-the-frontend-react-dashboard)
+9. [Open the App in Your Browser](#step-8--open-the-app-in-your-browser)
+10. [Alternative: One-Click Launch](#-alternative-one-click-launch-quick-start)
+11. [Alternative: Docker Deployment](#-alternative-docker-deployment)
+12. [Troubleshooting](#-troubleshooting)
 
 ---
 
-## 1. 📦 What You'll Be Installing
+## 📦 Prerequisites — What You'll Need
 
 Before we begin, here's a summary of everything this project needs:
 
@@ -39,18 +39,18 @@ Before we begin, here's a summary of everything this project needs:
 
 ---
 
-## 2. 🔧 Step 1 — Install Git
+## Step 1 — 🔧 Install Git
 
 Git is the tool that lets you download the project code from GitHub.
 
-### 2.1 Download Git
+### 1.1 Download Git
 
 1. Open your web browser (Chrome, Edge, Firefox, etc.)
 2. Go to: **https://git-scm.com/downloads/win**
 3. Click the **"Click here to download"** button — this downloads the installer (e.g., `Git-2.47.1-64-bit.exe`)
 4. Wait for the download to finish (check the bottom of your browser or your `Downloads` folder)
 
-### 2.2 Install Git
+### 1.2 Install Git
 
 1. Go to your **Downloads** folder
 2. **Double-click** the file `Git-2.47.1-64-bit.exe` (or whatever version you downloaded)
@@ -63,7 +63,7 @@ Git is the tool that lets you download the project code from GitHub.
 5. On the final screen, click **Install**
 6. When it finishes, click **Finish**
 
-### 2.3 Verify Git is Installed
+### 1.3 Verify Git is Installed
 
 1. Press `Windows Key + R` on your keyboard
 2. Type `cmd` and press **Enter** — this opens Command Prompt
@@ -76,18 +76,18 @@ Git is the tool that lets you download the project code from GitHub.
 
 ---
 
-## 3. ☕ Step 2 — Install Java 21 (JDK)
+## Step 2 — ☕ Install Java 21 (JDK)
 
 The backend server is built with Java. You need Java Development Kit (JDK) version 21.
 
-### 3.1 Download Java 21
+### 2.1 Download Java 21
 
 1. Open your browser and go to: **https://adoptium.net/**
 2. You should see a big button saying **"Latest LTS Release"** — make sure it says **JDK 21** (or select version 21 from the dropdown)
 3. Click the **download button** for **Windows x64** → `.msi` installer
 4. Wait for the download to finish (e.g., `OpenJDK21U-jdk_x64_windows_hotspot_21.0.x.msi`)
 
-### 3.2 Install Java 21
+### 2.2 Install Java 21
 
 1. Go to your **Downloads** folder
 2. **Double-click** the `.msi` file
@@ -98,7 +98,7 @@ The backend server is built with Java. You need Java Development Kit (JDK) versi
    - Click **Next**, then **Install**
 5. When it finishes, click **Finish**
 
-### 3.3 Verify Java is Installed
+### 2.3 Verify Java is Installed
 
 1. **Close all open Command Prompt windows** (important — so it picks up the new PATH)
 2. Press `Windows Key + R`, type `cmd`, press **Enter**
@@ -114,17 +114,17 @@ The backend server is built with Java. You need Java Development Kit (JDK) versi
 
 ---
 
-## 4. 🟢 Step 3 — Install Node.js
+## Step 3 — 🟢 Install Node.js
 
 The frontend dashboard is built with React and needs Node.js to run.
 
-### 4.1 Download Node.js
+### 3.1 Download Node.js
 
 1. Open your browser and go to: **https://nodejs.org/**
 2. Click the button that says **"LTS"** (Long Term Support) — this downloads the recommended version (20.x or newer)
 3. Wait for the download to finish (e.g., `node-v20.x.x-x64.msi`)
 
-### 4.2 Install Node.js
+### 3.2 Install Node.js
 
 1. Go to your **Downloads** folder
 2. **Double-click** the `.msi` file
@@ -138,7 +138,7 @@ The frontend dashboard is built with React and needs Node.js to run.
    - Click **Install**
 5. When it finishes, click **Finish**
 
-### 4.3 Verify Node.js is Installed
+### 3.3 Verify Node.js is Installed
 
 1. **Close all open Command Prompt windows**
 2. Press `Windows Key + R`, type `cmd`, press **Enter**
@@ -155,20 +155,20 @@ The frontend dashboard is built with React and needs Node.js to run.
 
 ---
 
-## 5. 📡 Step 4 — Install Npcap (Packet Capture Driver)
+## Step 4 — 📡 Install Npcap (Packet Capture Driver)
 
 Npcap is a Windows driver that allows the application to capture live network traffic.
 
 > **📝 Note:** This step is **required** for live packet capture. If you skip this, the app will still
 > start (login, dashboard, and recorded data will work), but **live capture won't function**.
 
-### 5.1 Download Npcap
+### 4.1 Download Npcap
 
 1. Open your browser and go to: **https://npcap.com/#download**
 2. Click the **"Npcap x.x.x installer"** link to download
 3. Wait for the download (e.g., `npcap-1.80.exe`)
 
-### 5.2 Install Npcap
+### 4.2 Install Npcap
 
 1. Go to your **Downloads** folder
 2. **Double-click** `npcap-1.80.exe`
@@ -185,11 +185,11 @@ Npcap is a Windows driver that allows the application to capture live network tr
 
 ---
 
-## 6. 📁 Step 5 — Create a Folder & Clone the Project
+## Step 5 — 📁 Create a Folder & Clone the Project
 
 Now you'll download the project source code from GitHub onto your computer.
 
-### 6.1 Create a Folder on Your Desktop
+### 5.1 Create a Folder on Your Desktop
 
 1. Go to your **Desktop** (minimize all windows or press `Windows Key + D`)
 2. **Right-click** on any empty space on the Desktop
@@ -202,7 +202,7 @@ Now you'll download the project source code from GitHub onto your computer.
    ```
 5. Press **Enter** to confirm the folder name
 
-### 6.2 Open Terminal in That Folder
+### 5.2 Open Terminal in That Folder
 
 1. **Double-click** the `NetMonitor` folder you just created to open it
 2. You should see an empty folder in File Explorer
@@ -223,7 +223,7 @@ Now you'll download the project source code from GitHub onto your computer.
    - While holding Shift, **right-click** on empty space inside the folder
    - Click **"Open PowerShell window here"** or **"Open command window here"**
 
-### 6.3 Clone the Project from GitHub
+### 5.3 Clone the Project from GitHub
 
 1. In the terminal window that just opened, type this command and press **Enter**:
    ```
@@ -240,7 +240,7 @@ Now you'll download the project source code from GitHub onto your computer.
 3. Wait for it to finish (this may take 30 seconds to a few minutes depending on your internet)
 4. ✅ When you see the prompt again (e.g., `C:\Users\YourName\Desktop\NetMonitor>`), the clone is done!
 
-### 6.4 Verify the Clone
+### 5.4 Verify the Clone
 
 1. In the same terminal, type:
    ```
@@ -262,11 +262,11 @@ Now you'll download the project source code from GitHub onto your computer.
 
 ---
 
-## 7. ⚙️ Step 6 — Run the Backend (Spring Boot Server)
+## Step 6 — ⚙️ Run the Backend (Spring Boot Server)
 
 The backend is a Java Spring Boot application. It needs to run first because the frontend talks to it.
 
-### 7.1 Open a Terminal in the Backend Folder
+### 6.1 Open a Terminal in the Backend Folder
 
 1. If you still have the terminal open from the previous step, type:
    ```
@@ -277,7 +277,7 @@ The backend is a Java Spring Boot application. It needs to run first because the
    - Go to: `Desktop` → `NetMonitor` → `network-traffic-monitoring-system` → `network-monitor-backend`
    - Click the **address bar**, type `cmd`, and press **Enter**
 
-### 7.2 Start the Backend Server
+### 6.2 Start the Backend Server
 
 > **⚠️ IMPORTANT:** **You must run this as Administrator** for live packet capture to work.
 > If you don't need live capture, running normally is fine.
@@ -324,11 +324,11 @@ The backend is a Java Spring Boot application. It needs to run first because the
 
 ---
 
-## 8. 🎨 Step 7 — Run the Frontend (React Dashboard)
+## Step 7 — 🎨 Run the Frontend (React Dashboard)
 
 The frontend is a React app built with Vite. You'll run this in a **separate** terminal window.
 
-### 8.1 Open a NEW Terminal in the Frontend Folder
+### 7.1 Open a NEW Terminal in the Frontend Folder
 
 > ⚠️ Keep the backend terminal running! Open a **new, separate** terminal window.
 
@@ -336,7 +336,7 @@ The frontend is a React app built with Vite. You'll run this in a **separate** t
 2. Navigate to: `Desktop` → `NetMonitor` → `network-traffic-monitoring-system` → `network-monitor-frontend`
 3. Click the **address bar** at the top, type `cmd`, and press **Enter**
 
-### 8.2 Install Frontend Dependencies
+### 7.2 Install Frontend Dependencies
 
 1. In the new terminal, type:
    ```
@@ -349,7 +349,7 @@ The frontend is a React app built with Vite. You'll run this in a **separate** t
    ```
 4. Wait for it to finish (1–3 minutes on first run)
 
-### 8.3 Start the Frontend Dev Server
+### 7.3 Start the Frontend Dev Server
 
 1. In the same terminal, type:
    ```
@@ -367,9 +367,9 @@ The frontend is a React app built with Vite. You'll run this in a **separate** t
 
 ---
 
-## 9. 🌐 Step 8 — Open the App in Your Browser
+## Step 8 — 🌐 Open the App in Your Browser
 
-### 9.1 Access the Dashboard
+### 8.1 Access the Dashboard
 
 1. Open your web browser (Chrome, Edge, Firefox)
 2. In the address bar, type:
@@ -379,7 +379,7 @@ The frontend is a React app built with Vite. You'll run this in a **separate** t
 3. Press **Enter**
 4. You should see the **NetMonitor login page** with a dark glassmorphic design! 🎉
 
-### 9.2 Log In
+### 8.2 Log In
 
 Use the default credentials:
 
@@ -393,7 +393,7 @@ Use the default credentials:
 3. Click the **Login** button
 4. ✅ You should now see the **Network Monitoring Dashboard** with live charts and statistics!
 
-### 9.3 What You Can Do Now
+### 8.3 What You Can Do Now
 
 - 📊 **Dashboard** — See real-time packet statistics and traffic charts
 - 📦 **Packets** — Browse captured network packets with deep inspection details
@@ -402,7 +402,7 @@ Use the default credentials:
 
 ---
 
-## 10. ⚡ Alternative: One-Click Launch (Quick Start)
+## ⚡ Alternative: One-Click Launch (Quick Start)
 
 If you don't need the frontend dev server with hot-reload and just want to see the app:
 
@@ -425,7 +425,7 @@ If you don't need the frontend dev server with hot-reload and just want to see t
 
 ---
 
-## 11. 🐳 Alternative: Docker Deployment
+## 🐳 Alternative: Docker Deployment
 
 If you have **Docker Desktop** installed, you can run everything in containers with one command.
 
@@ -455,7 +455,7 @@ If you have **Docker Desktop** installed, you can run everything in containers w
 
 ---
 
-## 12. 🔧 Troubleshooting
+## 🔧 Troubleshooting
 
 ### ❌ `git` is not recognized as a command
 

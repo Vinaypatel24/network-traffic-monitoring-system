@@ -72,6 +72,14 @@ flowchart TD
 
 ---
 
+> ### 🆕 First Time Here? Start with the Setup Guide!
+>
+> **If you're new and want to run this project on your computer**, we have a detailed step-by-step guide that covers _everything_ — from installing Git, Java, and Node.js to cloning and launching the app.
+>
+> ### 👉 **[Read the Complete Setup Guide (SETUP_GUIDE.md)](SETUP_GUIDE.md)** 👈
+
+---
+
 ## 🚀 Quick Launch (Windows Single-Click)
 
 The repository includes a single-click launcher that initializes the database, backend engine, and unified UI without requiring complex setups:
