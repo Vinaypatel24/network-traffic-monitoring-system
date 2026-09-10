@@ -21,10 +21,11 @@
 
 ---
 
-## 📸 Interface Preview
+## 🎬 Interactive System Walkthrough
 
 <div align="center">
-  <img src="docs/screenshots/02_dashboard.png" alt="NetMonitor System Dashboard" width="100%" />
+  <img src="docs/dashboard_demo.gif" alt="NetMonitor System Walkthrough Demo" width="100%" />
+  <p><em>Autonomous walkthrough showcasing secure authentication, real-time packet capture, traffic analytics, deep packet inspection, and threat response.</em></p>
 </div>
 
 ---
