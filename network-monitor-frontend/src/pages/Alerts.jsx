@@ -1,165 +1,293 @@
 import React, { useState } from 'react';
 import { useAppData } from '../context/AppDataContext';
-import { ShieldAlert, CheckCircle, Clock, Bell, Ban, ShieldCheck } from 'lucide-react';
+import { ShieldAlert, CheckCircle, Clock, Bell, Ban, ShieldCheck, Filter, RefreshCw } from 'lucide-react';
 import ForensicResolveModal from '../components/ForensicResolveModal';
+
+const SEVERITY_CONFIG = {
+  critical: { color: 'var(--neon-red,   #ff2244)', glow: 'rgba(255,34,68,0.18)',  badge: 'badge-danger',   cls: 'alert-critical' },
+  high:     { color: 'var(--neon-amber, #ffb800)', glow: 'rgba(255,184,0,0.14)',  badge: 'badge-warning',  cls: 'alert-high'     },
+  medium:   { color: 'var(--neon-cyan,  #00e5ff)', glow: 'rgba(0,229,255,0.12)', badge: 'badge-info',     cls: 'alert-medium'   },
+  low:      { color: 'var(--neon-green, #00ff41)', glow: 'rgba(0,255,65,0.12)',  badge: 'badge-success',  cls: 'alert-low'      },
+};
+
+const getSeverity = (sev) => SEVERITY_CONFIG[sev?.toLowerCase()] || SEVERITY_CONFIG.low;
 
 const Alerts = () => {
   const { alerts, alertsLoading, fetchAlerts, resolveAlert, acknowledgeAlert } = useAppData();
   const [selectedAlertForModal, setSelectedAlertForModal] = useState(null);
-  const [actionLoading, setActionLoading] = useState(null); // alertId being actioned
+  const [actionLoading, setActionLoading] = useState(null);
+  const [filter, setFilter] = useState('ALL'); // ALL | NEW | ACKNOWLEDGED | RESOLVED
 
   const handleResolve = async (alertId, action) => {
     setActionLoading(alertId + action);
-    try {
-      await resolveAlert(alertId, action);
-    } catch (err) {
-      console.error('Failed to resolve alert:', err);
-    } finally {
-      setActionLoading(null);
-    }
+    try { await resolveAlert(alertId, action); }
+    catch (err) { console.error(err); }
+    finally { setActionLoading(null); }
   };
 
   const handleAcknowledge = async (alertId) => {
-    try {
-      await acknowledgeAlert(alertId);
-    } catch (err) {
-      console.error('Failed to acknowledge alert:', err);
-    }
+    try { await acknowledgeAlert(alertId); }
+    catch (err) { console.error(err); }
   };
 
-  const getSeverityColor = (severity) => {
-    switch (severity?.toLowerCase()) {
-      case 'critical': return 'var(--danger)';
-      case 'high': return 'var(--warning)';
-      case 'medium': return 'var(--accent-primary)';
-      default: return 'var(--success)';
-    }
+  const filtered = filter === 'ALL'
+    ? alerts
+    : alerts.filter(a => a.status === filter);
+
+  const counts = {
+    ALL: alerts.length,
+    NEW: alerts.filter(a => a.status === 'NEW').length,
+    ACKNOWLEDGED: alerts.filter(a => a.status === 'ACKNOWLEDGED').length,
+    RESOLVED: alerts.filter(a => a.status === 'RESOLVED').length,
   };
 
   return (
     <div className="animate-fade-in">
-      <div className="flex-between" style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Security Alerts</h2>
-        <button onClick={fetchAlerts} className="btn btn-outline" style={{ padding: '0.5rem 1rem' }}>
-          Refresh
-        </button>
+
+      {/* ── Header ── */}
+      <div className="flex-between" style={{ marginBottom: '1.25rem' }}>
+        <div>
+          <div style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '0.62rem',
+            color: 'var(--text-muted)',
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            marginBottom: '0.3rem',
+          }}>
+            // Threat Intelligence
+          </div>
+          <h2 style={{
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: '1.25rem',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+          }}>
+            Security Alerts
+          </h2>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <button
+            id="btn-refresh-alerts"
+            onClick={fetchAlerts}
+            className="btn btn-outline"
+            style={{ padding: '0.45rem 0.6rem' }}
+          >
+            <RefreshCw size={14} className={alertsLoading ? 'animate-spin' : ''} />
+          </button>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      {/* ── Filter Tabs ── */}
+      <div className="glass-panel" style={{ padding: '0.5rem', marginBottom: '1.25rem', display: 'flex', gap: '0.25rem' }}>
+        {['ALL', 'NEW', 'ACKNOWLEDGED', 'RESOLVED'].map(tab => (
+          <button
+            key={tab}
+            onClick={() => setFilter(tab)}
+            style={{
+              flex: 1,
+              padding: '0.5rem',
+              borderRadius: '5px',
+              border: filter === tab ? '1px solid rgba(0,255,65,0.3)' : '1px solid transparent',
+              background: filter === tab ? 'rgba(0,255,65,0.08)' : 'transparent',
+              color: filter === tab ? 'var(--neon-green, #00ff41)' : 'var(--text-muted)',
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '0.68rem',
+              fontWeight: 600,
+              letterSpacing: '0.08em',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease-in-out',
+              textShadow: filter === tab ? '0 0 8px rgba(0,255,65,0.4)' : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.4rem',
+            }}
+          >
+            {tab}
+            <span style={{
+              background: filter === tab ? 'rgba(0,255,65,0.15)' : 'var(--bg-tertiary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '3px',
+              padding: '0 0.35rem',
+              fontSize: '0.6rem',
+            }}>
+              {counts[tab]}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* ── Alert List ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         {alertsLoading ? (
-          <div className="flex-center" style={{ padding: '3rem' }}>Loading...</div>
-        ) : alerts.length === 0 ? (
-          <div className="glass-panel flex-center" style={{ padding: '3rem', color: 'var(--text-muted)' }}>
-            <ShieldAlert size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
-            <p>No alerts recorded</p>
+          <div className="flex-center glass-panel" style={{ padding: '3rem' }}>
+            <span style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              color: 'var(--text-muted)',
+              fontSize: '0.8rem',
+              letterSpacing: '0.08em',
+            }}>
+              LOADING...
+            </span>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="glass-panel flex-center" style={{
+            padding: '3rem',
+            flexDirection: 'column',
+            gap: '0.75rem',
+          }}>
+            <ShieldAlert size={40} style={{ opacity: 0.15, color: 'var(--neon-green)' }} />
+            <p style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              color: 'var(--text-muted)',
+              fontSize: '0.78rem',
+              letterSpacing: '0.08em',
+            }}>
+              NO_ALERTS_FOUND
+            </p>
           </div>
         ) : (
-          alerts.map(alert => (
-            <div key={alert.id} className="glass-panel" style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              borderLeft: `4px solid ${getSeverityColor(alert.severity)}`
-            }}>
-              <div style={{ flex: 1, marginRight: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {alert.alertType}
-                  </h3>
-                  <span className="badge" style={{
-                    background: `${getSeverityColor(alert.severity)}33`,
-                    color: getSeverityColor(alert.severity)
-                  }}>
-                    {alert.severity}
-                  </span>
-                  <span className="badge" style={{
-                    background: alert.status === 'RESOLVED' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.1)',
-                    color: alert.status === 'RESOLVED' ? 'var(--success)' : 'var(--danger)'
-                  }}>
-                    {alert.status}
-                  </span>
-                  {alert.confidenceScore && (
-                    <span className="badge" style={{ background: 'rgba(0, 240, 255, 0.12)', color: 'var(--accent-primary)', fontSize: '0.7rem' }}>
-                      {alert.confidenceScore}% Confidence
-                    </span>
-                  )}
-                </div>
+          filtered.map(alert => {
+            const s = getSeverity(alert.severity);
+            return (
+              <div
+                key={alert.id}
+                className={`glass-panel ${s.cls}`}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
 
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.4rem' }}>
-                  {alert.description}
-                </p>
+                  {/* Info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {/* Top row */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
+                      <h3 style={{
+                        fontFamily: "'Space Grotesk', sans-serif",
+                        fontSize: '1rem',
+                        fontWeight: 700,
+                        color: 'var(--text-primary)',
+                      }}>
+                        {alert.alertType}
+                      </h3>
+                      <span className={`badge ${s.badge}`}>
+                        {alert.severity || 'LOW'}
+                      </span>
+                      <span className={`badge ${alert.status === 'RESOLVED' ? 'badge-success' : alert.status === 'ACKNOWLEDGED' ? 'badge-warning' : 'badge-danger'}`}>
+                        {alert.status}
+                      </span>
+                      {alert.confidenceScore && (
+                        <span className="badge badge-info" style={{ fontSize: '0.62rem' }}>
+                          {alert.confidenceScore}% CONF
+                        </span>
+                      )}
+                    </div>
 
-                {alert.verdict && (
-                  <div style={{
-                    fontSize: '0.8rem',
-                    color: 'var(--accent-primary)',
-                    marginBottom: '0.4rem',
-                    background: 'rgba(0, 240, 255, 0.05)',
-                    padding: '0.3rem 0.6rem',
-                    borderRadius: '6px',
-                    display: 'inline-block'
-                  }}>
-                    <strong>Diagnosis:</strong> {alert.verdict}
+                    {/* Description */}
+                    <p style={{
+                      fontSize: '0.875rem',
+                      color: 'var(--text-secondary)',
+                      marginBottom: '0.5rem',
+                      fontFamily: "'Inter', sans-serif",
+                    }}>
+                      {alert.description}
+                    </p>
+
+                    {/* Verdict */}
+                    {alert.verdict && (
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        padding: '0.25rem 0.65rem',
+                        marginBottom: '0.5rem',
+                        borderRadius: '4px',
+                        background: 'rgba(0,229,255,0.06)',
+                        border: '1px solid rgba(0,229,255,0.15)',
+                        fontSize: '0.78rem',
+                        fontFamily: "'JetBrains Mono', monospace",
+                        color: 'var(--neon-cyan, #00e5ff)',
+                      }}>
+                        DIAGNOSIS: {alert.verdict}
+                      </div>
+                    )}
+
+                    {/* Meta */}
+                    <div style={{
+                      display: 'flex',
+                      gap: '1.25rem',
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: '0.72rem',
+                      color: 'var(--text-muted)',
+                      flexWrap: 'wrap',
+                    }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <Clock size={12} />
+                        {new Date(alert.detectedAt).toLocaleString()}
+                      </span>
+                      <span>
+                        SRC: <strong style={{ color: s.color }}>{alert.sourceIp || 'UNKNOWN'}</strong>
+                      </span>
+                      <span>
+                        DST: <strong style={{ color: 'var(--text-mono)' }}>{alert.destinationIp || 'SYSTEM'}</strong>
+                      </span>
+                    </div>
                   </div>
-                )}
 
-                <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                    <Clock size={14} /> Detected: {new Date(alert.detectedAt).toLocaleString()}
-                  </span>
-                  <span>Source: <strong style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>{alert.sourceIp || 'Unknown'}</strong></span>
-                  <span>Target: <strong style={{ fontFamily: 'monospace' }}>{alert.destinationIp || 'System'}</strong></span>
+                  {/* Actions */}
+                  <div style={{ display: 'flex', gap: '0.45rem', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    {alert.status === 'NEW' && (
+                      <button
+                        onClick={() => handleAcknowledge(alert.id)}
+                        className="btn btn-outline"
+                        style={{ padding: '0.45rem', borderColor: 'rgba(255,184,0,0.3)', color: 'var(--neon-amber, #ffb800)' }}
+                        title="Acknowledge"
+                      >
+                        <Bell size={15} />
+                      </button>
+                    )}
+                    {(alert.status === 'NEW' || alert.status === 'ACKNOWLEDGED') && (
+                      <>
+                        <button
+                          onClick={() => handleResolve(alert.id, 'BLACKLIST')}
+                          className="btn btn-danger"
+                          disabled={actionLoading === alert.id + 'BLACKLIST'}
+                          style={{ padding: '0.45rem 0.75rem', fontSize: '0.78rem' }}
+                        >
+                          <Ban size={13} />
+                          {actionLoading === alert.id + 'BLACKLIST' ? '...' : 'BLACKLIST'}
+                        </button>
+                        <button
+                          onClick={() => handleResolve(alert.id, 'GENUINE')}
+                          className="btn btn-success"
+                          disabled={actionLoading === alert.id + 'GENUINE'}
+                          style={{ padding: '0.45rem 0.75rem', fontSize: '0.78rem' }}
+                        >
+                          <CheckCircle size={13} />
+                          {actionLoading === alert.id + 'GENUINE' ? '...' : 'GENUINE'}
+                        </button>
+                        <button
+                          onClick={() => setSelectedAlertForModal(alert)}
+                          className="btn btn-outline"
+                          style={{
+                            padding: '0.45rem 0.75rem',
+                            fontSize: '0.78rem',
+                            borderColor: 'rgba(0,255,65,0.25)',
+                            color: 'var(--neon-green, #00ff41)',
+                          }}
+                        >
+                          <ShieldCheck size={13} /> FORENSIC
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-
-              <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-                {alert.status === 'NEW' && (
-                  <button
-                    onClick={() => handleAcknowledge(alert.id)}
-                    className="btn btn-outline"
-                    style={{ color: 'var(--warning)', borderColor: 'rgba(245, 158, 11, 0.3)' }}
-                    title="Acknowledge"
-                  >
-                    <Bell size={18} />
-                  </button>
-                )}
-                {(alert.status === 'NEW' || alert.status === 'ACKNOWLEDGED') && (
-                  <>
-                    <button
-                      onClick={() => handleResolve(alert.id, 'BLACKLIST')}
-                      className="btn btn-danger"
-                      disabled={actionLoading === alert.id + 'BLACKLIST'}
-                      style={{ padding: '0.5rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-                      title="Blacklist IP and resolve"
-                    >
-                      <Ban size={16} />
-                      {actionLoading === alert.id + 'BLACKLIST' ? '...' : 'Blacklist'}
-                    </button>
-                    <button
-                      onClick={() => handleResolve(alert.id, 'GENUINE')}
-                      className="btn btn-success"
-                      disabled={actionLoading === alert.id + 'GENUINE'}
-                      style={{ padding: '0.5rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-                      title="Mark as genuine / false positive"
-                    >
-                      <CheckCircle size={16} />
-                      {actionLoading === alert.id + 'GENUINE' ? '...' : 'Genuine'}
-                    </button>
-                    <button
-                      onClick={() => setSelectedAlertForModal(alert)}
-                      className="btn btn-outline"
-                      style={{ padding: '0.5rem 0.7rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-primary)', borderColor: 'var(--border-color)' }}
-                      title="Full forensic analysis"
-                    >
-                      <ShieldCheck size={16} /> Analyze
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
-      {/* Forensic Resolution Modal */}
       {selectedAlertForModal && (
         <ForensicResolveModal
           alert={selectedAlertForModal}

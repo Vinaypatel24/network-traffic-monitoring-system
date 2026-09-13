@@ -20,7 +20,7 @@
 
 <br/>
 
-**A high-performance full-stack network monitoring, packet dissection, and real-time threat detection engine with an interactive glassmorphic dashboard.**
+**A high-performance full-stack network monitoring, packet dissection, and real-time threat detection engine with an interactive cybersecurity-themed HUD dashboard.**
 
 [**Read the Complete User Guide (Step-by-Step Manual) →**](USER_GUIDE.md)
 
@@ -49,7 +49,7 @@
 - ⚡ **Real-Time WebSocket Feed**: Sub-second streaming of packet statistics and alarms directly to the UI using STOMP over WebSockets.
 - 🛑 **Interactive IP Firewall & Blacklisting**: 1-click ban actions directly from security alerts and manual firewall rule management.
 - 💾 **Plug-and-Play Persistent Storage**: Runs out of the box with zero external DB dependencies using disk-persisted H2, or scales to production PostgreSQL via Docker.
-- 🎨 **Modern Dark Glassmorphic UI**: Built with React 19, Chart.js, Lucide Icons, and responsive design.
+- 🎨 **Cybersecurity / Threat-Hunter Dark HUD**: Built with React 19, Chart.js, Lucide Icons, CRT scanline overlay, neon status indicators, and responsive monospace terminal telemetry.
 
 ---
 
@@ -102,17 +102,19 @@ The repository includes a single-click launcher that initializes the database, b
 | Attribute | Value |
 | :--- | :--- |
 | **Username** | `admin` |
-| **Password** | `admin` |
+| **Password** | `Admin@123` |
 
 ---
 
 ## 🖼️ Application Gallery
 
-| Authentication & Access | Live Packet Inspector |
+| Authentication Terminal | Main Threat Dashboard HUD |
 | :---: | :---: |
-| <img src="docs/screenshots/01_login.png" width="450"/> | <img src="docs/screenshots/03_packets.png" width="450"/> |
-| **Threat Intelligence & Alerts** | **IP Blacklist Firewall** |
-| <img src="docs/screenshots/04_alerts.png" width="450"/> | <img src="docs/screenshots/05_blacklist.png" width="450"/> |
+| <img src="docs/screenshots/01_login.png" width="450"/> | <img src="docs/screenshots/02_dashboard.png" width="450"/> |
+| **Live Packet Inspector & Dissection** | **Threat Intelligence & Alerts** |
+| <img src="docs/screenshots/03_packets.png" width="450"/> | <img src="docs/screenshots/04_alerts.png" width="450"/> |
+| **Active Firewall & IP Blacklist** | |
+| <img src="docs/screenshots/05_blacklist.png" width="450"/> | |
 
 ---
 

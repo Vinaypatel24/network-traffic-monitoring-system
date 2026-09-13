@@ -1,14 +1,18 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import api from '../services/api';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Terminal } from 'lucide-react';
+
+const PROTOCOL_BADGE = {
+  TCP:  'badge-tcp',
+  UDP:  'badge-udp',
+  ICMP: 'badge-icmp',
+};
 
 const Packets = () => {
   const [packets, setPackets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  
-  // Filters
   const [protocol, setProtocol] = useState('');
   const [srcIp, setSrcIp] = useState('');
 
@@ -17,11 +21,9 @@ const Packets = () => {
     try {
       const params = new URLSearchParams({ page, size: 15 });
       if (protocol) params.append('protocol', protocol);
-      if (srcIp) params.append('srcIp', srcIp);
-
+      if (srcIp)    params.append('srcIp', srcIp);
       const response = await api.get(`/packets?${params.toString()}`);
-      const list = response.data?.data || response.data?.content || [];
-      setPackets(list);
+      setPackets(response.data?.data || response.data?.content || []);
       setTotalPages(response.data?.totalPages || 0);
     } catch (error) {
       console.error('Failed to fetch packets:', error);
@@ -30,81 +32,172 @@ const Packets = () => {
     }
   }, [page, protocol, srcIp]);
 
-  useEffect(() => {
-    fetchPackets();
-  }, [fetchPackets]);
+  useEffect(() => { fetchPackets(); }, [fetchPackets]);
 
   const handleFilter = (e) => {
     e.preventDefault();
-    // Just reset page; useEffect re-fetches automatically via fetchPackets dependency
     setPage(0);
   };
 
   return (
     <div className="animate-fade-in">
-      <div className="glass-panel" style={{ marginBottom: '2rem' }}>
-        <form onSubmit={handleFilter} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
-          <div style={{ flex: 1 }}>
+
+      {/* ── Page Header ── */}
+      <div style={{ marginBottom: '1.25rem' }}>
+        <div style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: '0.62rem',
+          color: 'var(--text-muted)',
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          marginBottom: '0.3rem',
+        }}>
+          // Packet Capture
+        </div>
+        <h2 style={{
+          fontFamily: "'Space Grotesk', sans-serif",
+          fontSize: '1.25rem',
+          fontWeight: 700,
+          color: 'var(--text-primary)',
+        }}>
+          Real-Time Packet Stream
+        </h2>
+      </div>
+
+      {/* ── Filter Bar ── */}
+      <div className="glass-panel" style={{ marginBottom: '1.25rem', padding: '1rem 1.25rem' }}>
+        <form onSubmit={handleFilter} style={{ display: 'flex', gap: '0.875rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div style={{ minWidth: '140px' }}>
             <label className="form-label">Protocol</label>
-            <select 
-              className="form-input" 
-              value={protocol} 
+            <select
+              id="filter-protocol"
+              className="form-input"
+              value={protocol}
               onChange={(e) => setProtocol(e.target.value)}
-              style={{ padding: '0.65rem 1rem' }}
+              style={{ padding: '0.6rem 0.875rem' }}
             >
-              <option value="">All</option>
+              <option value="">ALL</option>
               <option value="TCP">TCP</option>
               <option value="UDP">UDP</option>
               <option value="ICMP">ICMP</option>
             </select>
           </div>
-          <div style={{ flex: 2 }}>
-            <label className="form-label">Source IP</label>
-            <input 
-              type="text" 
-              className="form-input" 
-              placeholder="e.g. 192.168.1.10"
-              value={srcIp}
-              onChange={(e) => setSrcIp(e.target.value)}
-              style={{ padding: '0.65rem 1rem' }}
-            />
+          <div style={{ flex: 2, minWidth: '200px' }}>
+            <label className="form-label">Source IP Filter</label>
+            <div style={{ position: 'relative' }}>
+              <Search
+                size={14}
+                color="var(--text-muted)"
+                style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+              />
+              <input
+                id="filter-src-ip"
+                type="text"
+                className="form-input"
+                placeholder="192.168.x.x"
+                value={srcIp}
+                onChange={(e) => setSrcIp(e.target.value)}
+                style={{ paddingLeft: '2.5rem', padding: '0.6rem 0.875rem 0.6rem 2.5rem' }}
+              />
+            </div>
           </div>
-          <button type="submit" className="btn btn-primary" style={{ padding: '0.65rem 1.5rem' }}>
-            <Search size={18} /> Search
+          <button
+            id="btn-apply-filter"
+            type="submit"
+            className="btn btn-primary"
+            style={{ padding: '0.6rem 1.25rem', alignSelf: 'flex-end' }}
+          >
+            <Terminal size={14} /> Apply Filter
           </button>
         </form>
       </div>
 
+      {/* ── Packet Table ── */}
       <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <table className="data-table">
           <thead>
-            <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}>
-              <th style={{ padding: '1rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Time</th>
-              <th style={{ padding: '1rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Protocol</th>
-              <th style={{ padding: '1rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Source</th>
-              <th style={{ padding: '1rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Destination</th>
-              <th style={{ padding: '1rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Size</th>
-              <th style={{ padding: '1rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Flags</th>
+            <tr>
+              <th>Timestamp</th>
+              <th>Protocol</th>
+              <th>Source</th>
+              <th>Destination</th>
+              <th>Size</th>
+              <th>Flags</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center' }}>Loading...</td></tr>
+              <tr>
+                <td colSpan="6" style={{
+                  padding: '2.5rem',
+                  textAlign: 'center',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '0.78rem',
+                  color: 'var(--text-muted)',
+                  letterSpacing: '0.08em',
+                }}>
+                  FETCHING_PACKETS...
+                </td>
+              </tr>
             ) : packets.length === 0 ? (
-              <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center' }}>No packets found</td></tr>
+              <tr>
+                <td colSpan="6" style={{
+                  padding: '2.5rem',
+                  textAlign: 'center',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '0.78rem',
+                  color: 'var(--text-muted)',
+                  letterSpacing: '0.08em',
+                }}>
+                  NO_PACKETS_FOUND
+                </td>
+              </tr>
             ) : (
               packets.map(packet => (
-                <tr key={packet.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                  <td style={{ padding: '1rem', fontSize: '0.9rem' }}>{new Date(packet.capturedAt).toLocaleString()}</td>
-                  <td style={{ padding: '1rem' }}>
-                    <span className={`badge ${packet.protocol === 'TCP' ? 'badge-info' : packet.protocol === 'UDP' ? 'badge-warning' : 'badge-danger'}`}>
+                <tr key={packet.id}>
+                  <td style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: '0.78rem',
+                    color: 'var(--text-muted)',
+                  }}>
+                    {new Date(packet.capturedAt).toLocaleTimeString()}
+                  </td>
+                  <td>
+                    <span className={`badge ${PROTOCOL_BADGE[packet.protocol] || 'badge-info'}`}>
                       {packet.protocol}
                     </span>
                   </td>
-                  <td style={{ padding: '1rem', fontFamily: 'monospace' }}>{packet.srcIp}:{packet.srcPort || '*'}</td>
-                  <td style={{ padding: '1rem', fontFamily: 'monospace' }}>{packet.dstIp}:{packet.dstPort || '*'}</td>
-                  <td style={{ padding: '1rem', fontSize: '0.9rem' }}>{packet.packetSize} B</td>
-                  <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{packet.tcpFlags || '-'}</td>
+                  <td style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: '0.82rem',
+                    color: 'var(--neon-cyan, #00e5ff)',
+                  }}>
+                    {packet.srcIp}
+                    <span style={{ color: 'var(--text-muted)' }}>:{packet.srcPort || '*'}</span>
+                  </td>
+                  <td style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: '0.82rem',
+                    color: 'var(--text-mono)',
+                  }}>
+                    {packet.dstIp}
+                    <span style={{ color: 'var(--text-muted)' }}>:{packet.dstPort || '*'}</span>
+                  </td>
+                  <td style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: '0.78rem',
+                    color: 'var(--text-secondary)',
+                  }}>
+                    {packet.packetSize} <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>B</span>
+                  </td>
+                  <td style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: '0.72rem',
+                    color: packet.tcpFlags ? 'var(--neon-amber, #ffb800)' : 'var(--text-muted)',
+                    letterSpacing: '0.04em',
+                  }}>
+                    {packet.tcpFlags || '—'}
+                  </td>
                 </tr>
               ))
             )}
@@ -112,26 +205,40 @@ const Packets = () => {
         </table>
 
         {/* Pagination */}
-        <div className="flex-between" style={{ padding: '1rem', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)' }}>
-          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-            Page {page + 1} of {Math.max(1, totalPages)}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0.75rem 1rem',
+          borderTop: '1px solid var(--border-color)',
+          background: 'var(--bg-secondary)',
+        }}>
+          <span style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '0.72rem',
+            color: 'var(--text-muted)',
+            letterSpacing: '0.06em',
+          }}>
+            PAGE {page + 1} / {Math.max(1, totalPages)}
           </span>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button 
-              className="btn btn-outline" 
-              style={{ padding: '0.4rem 0.8rem' }}
+          <div style={{ display: 'flex', gap: '0.4rem' }}>
+            <button
+              id="btn-prev-page"
+              className="btn btn-outline"
+              style={{ padding: '0.4rem 0.65rem' }}
               disabled={page === 0}
               onClick={() => setPage(p => p - 1)}
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={16} />
             </button>
-            <button 
-              className="btn btn-outline" 
-              style={{ padding: '0.4rem 0.8rem' }}
+            <button
+              id="btn-next-page"
+              className="btn btn-outline"
+              style={{ padding: '0.4rem 0.65rem' }}
               disabled={page >= totalPages - 1}
               onClick={() => setPage(p => p + 1)}
             >
-              <ChevronRight size={18} />
+              <ChevronRight size={16} />
             </button>
           </div>
         </div>
