@@ -52,7 +52,7 @@ The system comes pre-seeded with an administrator account:
 
 | Role | Username | Password |
 | :--- | :--- | :--- |
-| **System Administrator** | `admin` | `admin` |
+| **System Administrator** | `admin` | `Admin@123` |
 
 ---
 
@@ -63,7 +63,7 @@ Navigate to `http://localhost:8080/login`. The login interface uses stateless JW
 
 ![Login Screen](docs/screenshots/01_login.png)
 
-- Enter `admin` / `admin` and click **Sign In**.
+- Enter `admin` / `Admin@123` and click **Sign In**.
 - If tokens expire, the system automatically uses refresh tokens or prompts for re-authentication.
 
 ---

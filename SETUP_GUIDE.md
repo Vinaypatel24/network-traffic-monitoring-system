@@ -386,10 +386,10 @@ Use the default credentials:
 | Field | Value |
 |:---|:---|
 | **Username** | `admin` |
-| **Password** | `admin` |
+| **Password** | `Admin@123` |
 
 1. Type `admin` in the **Username** field
-2. Type `admin` in the **Password** field
+2. Type `Admin@123` in the **Password** field
 3. Click the **Login** button
 4. ✅ You should now see the **Network Monitoring Dashboard** with live charts and statistics!
 
@@ -417,7 +417,7 @@ If you don't need the frontend dev server with hot-reload and just want to see t
    - Start the backend server
    - Wait for it to initialize
    - Automatically open `http://localhost:8080` in your browser
-8. Log in with `admin` / `admin`
+8. Log in with `admin` / `Admin@123`
 
 > **📝 Note:** With this method, the unified app runs entirely on port **8080** (backend serves both
 > the API and a bundled frontend). You do NOT need to run `npm install` or `npm run dev`.
@@ -447,7 +447,7 @@ If you have **Docker Desktop** installed, you can run everything in containers w
    ```
 3. Wait for all images to build and containers to start (first run may take 5–10 minutes)
 4. Open your browser and go to: **http://localhost:5173**
-5. Log in with `admin` / `admin`
+5. Log in with `admin` / `Admin@123`
 
 > **⚠️ Warning:** Docker on Windows runs inside a lightweight VM. Live packet capture in Docker will
 > capture the VM's network traffic, **not** your physical Windows machine's traffic.
@@ -552,6 +552,6 @@ If you want the absolute shortest path to running the app:
 6. ✅ Clone → `git clone https://github.com/Vinaypatel24/network-traffic-monitoring-system.git`
 7. ✅ Enter folder → `cd network-traffic-monitoring-system`
 8. ✅ Launch → Right-click `start.bat` → **Run as administrator**
-9. ✅ Open browser → `http://localhost:8080` → Login: `admin` / `admin`
+9. ✅ Open browser → `http://localhost:8080` → Login: `admin` / `Admin@123`
 
 **That's it! You're monitoring network traffic! 🎉**
